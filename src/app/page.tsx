@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import SurahListModal from './components/SurahListModal';
 
 // Types for API response
@@ -13,27 +13,7 @@ interface VerseData {
   surahNameArabic: string;
 }
 
-interface ApiVerseResponse {
-  verse: {
-    id: number;
-    verse_number: number;
-    text_uthmani: string;
-    text_simple: string;
-  };
-  translation: {
-    text: string;
-    language_name: string;
-  };
-  transliteration: {
-    text: string;
-  };
-  surah: {
-    id: number;
-    name_simple: string;
-    name_arabic: string;
-    name_complex: string;
-  };
-}
+
 
 // Stars component for background
 const Stars = () => {
@@ -127,7 +107,7 @@ const VerseOfTheDay = ({ onOpenQuran }: { onOpenQuran: () => void }) => {
   };
 
   // Fetch verse data from API
-  const fetchVerseData = async () => {
+  const fetchVerseData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -155,7 +135,7 @@ const VerseOfTheDay = ({ onOpenQuran }: { onOpenQuran: () => void }) => {
       }
       
       // Find the specific verse we requested
-      const verse = verseResult.find((v: any) => v.numberInSurah === randomVerse.verse) || verseResult[0];
+      const verse = verseResult.find((v: { numberInSurah: number }) => v.numberInSurah === randomVerse.verse) || verseResult[0];
       
       // Get Surah metadata for names
       let surahInfo = { name_simple: `Surah ${randomVerse.surah}`, name_arabic: "" };
@@ -165,7 +145,7 @@ const VerseOfTheDay = ({ onOpenQuran }: { onOpenQuran: () => void }) => {
         );
         if (metadataResponse.ok) {
           const metadata = await metadataResponse.json();
-          const surahMeta = metadata.surahs?.find((s: any) => s.id === randomVerse.surah);
+          const surahMeta = metadata.surahs?.find((s: { id: number }) => s.id === randomVerse.surah);
           if (surahMeta) {
             surahInfo = surahMeta;
           }
@@ -219,13 +199,13 @@ const VerseOfTheDay = ({ onOpenQuran }: { onOpenQuran: () => void }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Empty dependency array since the function doesn't depend on any props or state
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 500);
     fetchVerseData();
     return () => clearTimeout(timer);
-  }, []);
+  }, [fetchVerseData]);
 
   // Show loading state
   if (loading) {
@@ -306,7 +286,7 @@ const VerseOfTheDay = ({ onOpenQuran }: { onOpenQuran: () => void }) => {
           {/* Translation */}
           <div className="text-center">
             <p className="text-white/90 text-base md:text-lg lg:text-xl leading-relaxed font-medium">
-              "{verseData.translation}"
+              &ldquo;{verseData.translation}&rdquo;
             </p>
           </div>
 

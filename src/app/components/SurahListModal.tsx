@@ -193,7 +193,7 @@ const VerseItem = ({ verse, surahName }: { verse: VerseData; surahName: string }
         {verse.translation && (
           <div className="border-t border-white/10 pt-4">
             <p className="text-white/90 text-lg md:text-xl leading-relaxed font-medium italic" dir="ltr">
-              "{verse.translation}"
+              &ldquo;{verse.translation}&rdquo;
             </p>
           </div>
         )}
