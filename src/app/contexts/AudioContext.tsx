@@ -277,7 +277,7 @@ export function AudioProvider({ children }: AudioProviderProps) {
       emitEvent('error', { error: errorMessage });
       console.error('Audio playback error:', error);
     }
-  }, [ensureAudioUnlock, state.volume, emitEvent, startTimeUpdates, stopTimeUpdates]);
+  }, [ensureAudioUnlock, settings.volume, state.volume, emitEvent, startTimeUpdates, stopTimeUpdates]);
 
   /**
    * Pause current playback
@@ -386,7 +386,7 @@ export function AudioProvider({ children }: AudioProviderProps) {
       emitEvent('error', { error: errorMessage });
       console.error('Audio resume error:', error);
     }
-  }, [state.isPaused, state.volume, emitEvent, startTimeUpdates, stopTimeUpdates]);
+  }, [state.isPaused, settings.volume, state.volume, emitEvent, startTimeUpdates, stopTimeUpdates]);
 
   /**
    * Stop current playback
@@ -433,7 +433,7 @@ export function AudioProvider({ children }: AudioProviderProps) {
       pauseTimeRef.current = time;
       dispatch({ type: 'SET_TIME', currentTime: time });
     }
-  }, [state.isPlaying, state.volume, play]);
+  }, [state.isPlaying, settings.volume, state.volume, play]);
 
   /**
    * Set volume

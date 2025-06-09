@@ -1,4 +1,22 @@
 // Quran API utilities for fetching verses, surahs, and translations
+
+// API Response interfaces
+interface ApiVerseResponse {
+  id: number;
+  chapter_id: number;
+  verse_number: number;
+  text_uthmani: string;
+  juz_number: number;
+  hizb_number: number;
+  sajdah_type: string | null;
+  translations?: Array<{
+    text: string;
+  }>;
+  text_imlaei_simple?: string;
+}
+
+
+
 export interface SurahMetadata {
   number: number;
   name: string; // Arabic name
@@ -123,7 +141,7 @@ export async function fetchVerses(surahNumber: number): Promise<VerseData[]> {
     }
 
     // Map standard API response to VerseData interface
-    const versesData: VerseData[] = data.verses.map((v: any) => ({
+    const versesData: VerseData[] = data.verses.map((v: ApiVerseResponse) => ({
       id: v.id,
       surahId: v.chapter_id,
       numberInSurah: v.verse_number,
@@ -222,7 +240,7 @@ export async function fetchVersesWithTranslations(
     }
 
     // Map standard API response to VerseData interface
-    const versesData: VerseData[] = data.verses.map((v: any) => ({
+    const versesData: VerseData[] = data.verses.map((v: ApiVerseResponse) => ({
       id: v.id,
       surahId: v.chapter_id,
       numberInSurah: v.verse_number,

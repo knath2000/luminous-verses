@@ -87,13 +87,12 @@ export function useAutoScroll(
     }
   }, [announceToScreenReader]);
 
-  const throttledScrollToVerse = useCallback(
-    throttle((...args: unknown[]) => {
-      const verse = args[0] as VerseInfo;
+  const throttledScrollToVerse = useCallback((verse: VerseInfo) => {
+    const throttledFn = throttle(() => {
       scrollToVerseInternal(verse);
-    }, 100),
-    [scrollToVerseInternal]
-  );
+    }, 100);
+    throttledFn();
+  }, [scrollToVerseInternal]);
 
   // Main scroll effect
   useEffect(() => {
