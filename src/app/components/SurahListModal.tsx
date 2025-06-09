@@ -2,28 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useUserGesture } from '../contexts/UserGestureContext';
 
-// Types for API response
-interface SurahMetadata {
-  number: number;
-  name: string; // Arabic name
-  ename: string; // English name
-  tname: string; // Transliterated name
-  ayas: number; // Number of verses
-  type: string; // Meccan/Medinan
-}
-
-// Types for verses
-interface VerseData {
-  id: number;
-  text: string; // Arabic text
-  numberInSurah: number;
-  juz: number;
-  hizbQuarter: number;
-  sajda: boolean;
-  translation?: string; // English translation
-  transliteration?: string; // Transliteration
-}
+import { ClickableVerseContainer } from './ClickableVerseContainer';
+import SurahDescriptionHeader from './SurahDescriptionHeader';
+import {
+  fetchSurahs,
+  fetchVersesWithTranslations,
+  SurahMetadata,
+  VerseData
+} from '../utils/quranApi';
 
 // Modal view type
 type ModalView = 'list' | 'detail';
@@ -33,34 +21,19 @@ interface SurahListModalProps {
   onClose: () => void;
 }
 
-// Custom hook for fetching surahs
+// Custom hook for fetching surahs using the new API
 const useSurahs = () => {
   const [surahs, setSurahs] = useState<SurahMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSurahs = async () => {
+  const loadSurahs = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('https://luminous-verses-api-tan.vercel.app/api/v1/get-metadata?type=surah-list');
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch surahs: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Surahs API response:', data);
-      
-      // The API returns surahs in data.defaultData.surahs structure
-      const surahsData = data.defaultData?.surahs || data.surahs || data.chapters || data;
-      
-      if (Array.isArray(surahsData)) {
-        setSurahs(surahsData);
-      } else {
-        throw new Error('Invalid surahs data structure');
-      }
+      const surahsData = await fetchSurahs();
+      setSurahs(surahsData);
       
     } catch (err) {
       console.error('Error fetching surahs:', err);
@@ -80,70 +53,28 @@ const useSurahs = () => {
   };
 
   useEffect(() => {
-    fetchSurahs();
+    loadSurahs();
   }, []);
 
-  return { surahs, loading, error, refetch: fetchSurahs };
+  return { surahs, loading, error, refetch: loadSurahs };
 };
 
-// Custom hook for fetching verses
+// Custom hook for fetching verses with translations using the new API
 const useVerses = (surahNumber: number | null) => {
   const [verses, setVerses] = useState<VerseData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchVerses = async (surahNum: number) => {
+  const loadVerses = async (surahNum: number) => {
     try {
       setLoading(true);
       setError(null);
       
-      // First try to fetch verses with translation in a single call
-      const versesResponse = await fetch(`https://luminous-verses-api-tan.vercel.app/api/v1/get-verses?surah=${surahNum}&translation=true`);
+      // Fetch verses with translations using the new API
+      const versesData = await fetchVersesWithTranslations(surahNum);
+      console.log('Verses with translations:', versesData);
       
-      if (!versesResponse.ok) {
-        throw new Error(`Failed to fetch verses: ${versesResponse.status}`);
-      }
-      
-      const versesData = await versesResponse.json();
-      console.log('Verses API response:', versesData);
-      
-      if (Array.isArray(versesData)) {
-        // Add manual translations for common surahs as fallback
-        const versesWithTranslations = versesData.map((verse) => {
-          let translation = verse.translation;
-          
-          // Fallback translations for Surah Al-Fatiha (Surah 1)
-          if (surahNum === 1) {
-            const fatihaTranslations: { [key: number]: string } = {
-              1: "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
-              2: "[All] praise is [due] to Allah, Lord of the worlds -",
-              3: "The Entirely Merciful, the Especially Merciful,",
-              4: "Sovereign of the Day of Recompense.",
-              5: "It is You we worship and You we ask for help.",
-              6: "Guide us to the straight path -",
-              7: "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray."
-            };
-            translation = translation || fatihaTranslations[verse.numberInSurah];
-          }
-          
-          // Fallback translations for Surah Adh-Dhariyat (Surah 51) - popular verses
-          if (surahNum === 51) {
-            const dhariyatTranslations: { [key: number]: string } = {
-              56: "And I did not create the jinn and mankind except to worship Me."
-            };
-            translation = translation || dhariyatTranslations[verse.numberInSurah];
-          }
-          
-          return {
-            ...verse,
-            translation
-          };
-        });
-        
-        setVerses(versesWithTranslations);
-      } else {
-        throw new Error('Invalid verses data structure');
-      }
+      setVerses(versesData);
       
     } catch (err) {
       console.error('Error fetching verses:', err);
@@ -156,24 +87,38 @@ const useVerses = (surahNumber: number | null) => {
 
   useEffect(() => {
     if (surahNumber) {
-      fetchVerses(surahNumber);
+      loadVerses(surahNumber);
     }
   }, [surahNumber]);
 
-  return { verses, loading, error, refetch: () => surahNumber && fetchVerses(surahNumber) };
+  return { verses, loading, error, refetch: () => surahNumber && loadVerses(surahNumber) };
 };
 
 // Individual Verse Item Component
-const VerseItem = ({ verse, surahName }: { verse: VerseData; surahName: string }) => {
+const VerseItem = ({ verse, surahNumber }: { verse: VerseData; surahNumber: number }) => {
+  const { isAudioReady } = useUserGesture();
+  
   return (
-    <div className="group glass-morphism p-6 rounded-xl border border-white/10 hover:border-gold/40 transition-all duration-300">
+    <ClickableVerseContainer
+      surah={surahNumber}
+      verse={verse.numberInSurah}
+      className="glass-morphism p-6 rounded-xl border border-white/10 hover:border-gold/40 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-gold/10"
+      showPlayButton={true}
+      playButtonPosition="top-right"
+    >
+      {/* Audio Unlock Hint */}
+      {!isAudioReady && (
+        <div className="absolute top-4 left-4 bg-purple-500/20 px-3 py-1 rounded-full backdrop-blur-sm z-20">
+          <span className="text-purple-300 text-xs font-medium">Tap to unlock audio</span>
+        </div>
+      )}
+
       {/* Verse Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold font-bold text-sm">
             {verse.numberInSurah}
           </div>
-          <span className="text-gold/80 text-sm">{surahName} - Verse {verse.numberInSurah}</span>
         </div>
         {verse.sajda && (
           <div className="flex items-center gap-2 bg-purple-500/20 px-3 py-1 rounded-full">
@@ -201,21 +146,20 @@ const VerseItem = ({ verse, surahName }: { verse: VerseData; surahName: string }
 
       {/* Action Buttons */}
       <div className="flex gap-3 justify-center">
-        <button className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-gold/20 transition-all duration-300">
-          <svg className="w-4 h-4 text-gold group-hover:animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-          </svg>
-          <span className="text-white text-sm font-medium">Listen</span>
-        </button>
-        
-        <button className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-purple-500/20 transition-all duration-300">
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-purple-500/20 transition-all duration-300"
+        >
           <svg className="w-4 h-4 text-purple-300 group-hover:animate-bounce" fill="currentColor" viewBox="0 0 20 20">
             <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
           </svg>
           <span className="text-white text-sm font-medium">Save</span>
         </button>
 
-        <button className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-blue-500/20 transition-all duration-300">
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-blue-500/20 transition-all duration-300"
+        >
           <svg className="w-4 h-4 text-blue-300 group-hover:animate-pulse" fill="currentColor" viewBox="0 0 20 20">
             <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
           </svg>
@@ -228,7 +172,14 @@ const VerseItem = ({ verse, surahName }: { verse: VerseData; surahName: string }
         <span>Juz {verse.juz}</span>
         <span>Hizb Quarter {verse.hizbQuarter}</span>
       </div>
-    </div>
+
+      {/* Click instruction */}
+      <div className="mt-4 text-center">
+        <p className="text-gray-400 text-xs">
+          Click anywhere on the verse card to play audio recitation
+        </p>
+      </div>
+    </ClickableVerseContainer>
   );
 };
 
@@ -275,9 +226,12 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
   // Modal navigation state
   const [currentView, setCurrentView] = useState<ModalView>('list');
   const [selectedSurah, setSelectedSurah] = useState<SurahMetadata | null>(null);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
   
   // Fetch verses when a surah is selected
   const { verses, loading: versesLoading, error: versesError, refetch: refetchVerses } = useVerses(selectedSurah?.number || null);
+  
+  
 
   useEffect(() => {
     if (isOpen) {
@@ -295,15 +249,10 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
       
       // Restore focus to previously focused element
       previouslyFocusedElement.current?.focus();
-      
-      // Reset modal state when closed
-      setCurrentView('list');
-      setSelectedSurah(null);
     }
 
     return () => {
       document.body.style.overflow = '';
-      previouslyFocusedElement.current?.focus();
     };
   }, [isOpen]);
 
@@ -324,12 +273,15 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
     console.log('Selected surah:', surah);
     setSelectedSurah(surah);
     setCurrentView('detail');
+    setIsDescriptionExpanded(false); // Start with description collapsed
   };
 
   const handleBackToList = () => {
     setCurrentView('list');
     setSelectedSurah(null);
   };
+
+  
 
   if (!isOpen) return null;
 
@@ -353,68 +305,29 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
         tabIndex={-1}
         ref={modalRef}
         onKeyDown={handleKeyDown}
+        onClick={onClose}
         className="fixed inset-0 flex items-center justify-center p-4"
       >
         <div 
           className="relative w-full max-w-4xl max-h-[90vh] glass-morphism-dark rounded-3xl shadow-2xl overflow-hidden"
           onClick={e => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="relative z-10 p-6 border-b border-white/10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {currentView === 'detail' && selectedSurah && (
-                  <button
-                    onClick={handleBackToList}
-                    className="group p-2 rounded-full glass-morphism hover:bg-gold/20 transition-all duration-300"
-                    aria-label="Back to surah list"
-                  >
-                    <svg className="w-5 h-5 text-gold group-hover:-translate-x-1 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                )}
-                <div>
-                  {currentView === 'list' ? (
-                    <>
-                      <h2 id="modal-title" className="text-2xl md:text-3xl font-bold text-gradient-gold">
-                        ✨ Choose a Surah ✨
-                      </h2>
-                      <p className="text-white/70 mt-1">Select a chapter to explore its beautiful verses</p>
-                    </>
-                  ) : selectedSurah ? (
-                    <>
-                      <h2 id="modal-title" className="text-2xl md:text-3xl font-bold text-gradient-gold">
-                        {selectedSurah.ename}
-                      </h2>
-                      <div className="flex items-center gap-4 mt-1">
-                        <p className="text-white/70 font-[family-name:var(--font-amiri)] text-lg">
-                          {selectedSurah.name}
-                        </p>
-                        <span className="text-gold/80 text-sm">
-                          {selectedSurah.type} • {selectedSurah.ayas} verses
-                        </span>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="group p-2 rounded-full glass-morphism hover:bg-red-500/20 transition-all duration-300"
-                aria-label="Close modal"
-              >
-                <svg className="w-6 h-6 text-white group-hover:text-red-300" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
+          
+
+          
 
           {/* Content */}
-          <div className="relative z-10 p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="relative z-10 p-6 overflow-y-auto max-h-[90vh]">
             {currentView === 'list' && (
               <>
+                {/* Title for List View */}
+                <div className="text-center mb-8">
+                  <h2 id="modal-title" className="text-3xl md:text-4xl font-bold text-gradient-gold mb-2">
+                    ✨ Choose a Surah ✨
+                  </h2>
+                  <p className="text-white/70 text-lg">Select a chapter to explore its beautiful verses</p>
+                </div>
+
                 {loading && (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-4 border-gold/30 border-t-gold mb-4"></div>
@@ -455,6 +368,35 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
 
             {currentView === 'detail' && selectedSurah && (
               <>
+                {/* Surah Header - Now part of scrollable content */}
+                <div className="mb-6 text-center">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gradient-gold mb-2">
+                    {selectedSurah.ename}
+                  </h2>
+                  <div className="flex items-center justify-center gap-4">
+                    <p className="text-white/70 font-[family-name:var(--font-amiri)] text-lg">
+                      {selectedSurah.name}
+                    </p>
+                    <span className="text-gold/80 text-sm">
+                      {selectedSurah.type} • {selectedSurah.ayas} verses
+                    </span>
+                  </div>
+                </div>
+
+                {/* Surah Description Header - Now part of scrollable content */}
+                <SurahDescriptionHeader
+                  surah={{
+                    number: selectedSurah.number,
+                    name: selectedSurah.name,
+                    englishName: selectedSurah.ename,
+                    englishNameTranslation: selectedSurah.tname,
+                    numberOfAyahs: selectedSurah.ayas,
+                    revelationType: selectedSurah.type
+                  }}
+                  isExpanded={isDescriptionExpanded}
+                  onToggle={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                />
+
                 {versesLoading && (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-4 border-gold/30 border-t-gold mb-4"></div>
@@ -485,7 +427,7 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
                       <VerseItem
                         key={verse.id}
                         verse={verse}
-                        surahName={selectedSurah.ename}
+                        surahNumber={selectedSurah.number}
                       />
                     ))}
                   </div>
@@ -505,6 +447,25 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
               </>
             )}
           </div>
+
+          
+
+          {/* Floating Back Button - positioned halfway down the modal */}
+          {currentView === 'detail' && selectedSurah && (
+            <button
+              onClick={handleBackToList}
+              className="fixed left-8 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full glass-morphism opacity-30 hover:opacity-100 focus:opacity-100 bg-gray-500/20 hover:bg-gold/20 focus:bg-gold/20 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-gold/20 focus:shadow-xl focus:shadow-gold/20 group"
+              aria-label="Back to surah list"
+            >
+              <svg 
+                className="w-6 h-6 text-gray-400 group-hover:text-gold group-focus:text-gold group-hover:-translate-x-1 group-focus:-translate-x-1 transition-all duration-300 mx-auto" 
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+              >
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
 
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-gold/20 to-transparent rounded-full blur-xl"></div>

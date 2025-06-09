@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Amiri } from "next/font/google";
 import "./globals.css";
+import { UserGestureProvider } from "./contexts/UserGestureContext";
+import { AudioProvider } from "./contexts/AudioContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
+import AutoplayManager from "./components/AutoplayManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +43,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} antialiased`}
       >
-        {children}
+        <SettingsProvider>
+          <UserGestureProvider>
+            <AudioProvider>
+              <AutoplayManager />
+              {children}
+            </AudioProvider>
+          </UserGestureProvider>
+        </SettingsProvider>
         <div id="modal-root"></div>
       </body>
     </html>

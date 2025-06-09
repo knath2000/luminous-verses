@@ -70,6 +70,104 @@ useSurahDescription → Quran metadata
 - Animation utilities (twinkle, float, glow effects)
 ```
 
+## Audio System Architecture
+
+### Audio Technology Stack
+- **Web Audio API**: Advanced audio control and management
+- **HTML5 Audio Elements**: Cross-browser audio playback foundation
+- **Audio Pool Management**: Custom implementation for performance optimization
+- **User Gesture Detection**: Browser policy compliance system
+
+### Audio Implementation Components
+
+#### Core Audio Files
+```typescript
+// Audio Context Management
+src/app/contexts/AudioContext.tsx        // Global audio state provider
+src/app/contexts/UserGestureContext.tsx  // Browser gesture tracking
+src/app/contexts/SettingsContext.tsx     // Audio preferences
+
+// Audio Utilities
+src/app/utils/audioPoolManager.ts        // Audio instance pool management
+src/app/utils/audioUnlock.ts             // Browser audio unlock utility
+src/app/utils/audioUrlGenerator.ts       // Dynamic audio URL generation
+
+// Audio Hooks
+src/app/hooks/useAudio.ts                // Audio control abstraction
+
+// Audio Types
+src/app/types/audio.ts                   // TypeScript audio definitions
+
+// Audio Components
+src/app/components/AudioControls.tsx     // Global audio controls
+src/app/components/ClickableVerseContainer.tsx // Verse audio integration
+```
+
+#### Audio Architecture Pattern
+```mermaid
+graph TD
+    A[User Interaction] --> B[UserGestureContext]
+    B --> C[Audio Unlock]
+    C --> D[AudioContext Provider]
+    D --> E[Audio Pool Manager]
+    E --> F[Audio Instance Pool]
+    
+    G[useAudio Hook] --> D
+    H[AudioControls] --> G
+    I[ClickableVerseContainer] --> G
+    
+    J[SettingsContext] --> K[Audio Preferences]
+    K --> D
+    
+    L[Audio URL Generator] --> E
+    M[Error Recovery] --> E
+```
+
+### Audio System Features
+
+#### Browser Compatibility
+- **iOS Safari Audio Unlock**: Specialized handling for iOS audio restrictions
+- **Cross-browser Support**: Chrome, Firefox, Safari, Edge compatibility
+- **Mobile Optimization**: Touch gesture detection and audio unlock
+- **Progressive Enhancement**: Graceful degradation when audio fails
+
+#### Performance Optimization
+- **Audio Pool Management**: Reuse audio instances to prevent memory leaks
+- **Lazy Loading**: Audio resources loaded on demand
+- **Memory Cleanup**: Automatic cleanup of unused audio instances
+- **Error Recovery**: Comprehensive retry mechanisms for failed audio loads
+
+#### User Experience Features
+- **Gesture-based Unlock**: Automatic audio unlock on first user interaction
+- **Volume Control**: Integrated with settings system
+- **Autoplay Settings**: User-configurable autoplay preferences
+- **Loading States**: Visual feedback during audio loading
+- **Error Handling**: User-friendly error messages and recovery
+
+### Audio URL Generation
+```typescript
+// Dynamic audio source management
+const audioUrl = generateAudioUrl({
+  surahNumber: 1,
+  verseNumber: 1,
+  reciter: 'default',
+  quality: 'high'
+});
+```
+
+### Audio State Management
+```typescript
+// Global audio state structure
+interface AudioState {
+  currentAudio: HTMLAudioElement | null;
+  isPlaying: boolean;
+  isLoading: boolean;
+  error: string | null;
+  volume: number;
+  currentVerse: { surah: number; verse: number } | null;
+}
+```
+
 ## Development Environment
 
 ### Project Structure
