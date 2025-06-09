@@ -44,7 +44,7 @@ export interface SurahDescription {
   };
 }
 
-const API_BASE = 'https://luminous-verses-api-tan.vercel.app/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_QURAN_API_URL || 'https://api.quran.com/api/v4'; // Use env var or fallback
 
 // Cache for API responses to avoid repeated requests
 const cache = new Map<string, CacheEntry>();
@@ -77,7 +77,7 @@ export async function fetchSurahs(): Promise<SurahMetadata[]> {
   if (cached) return cached;
 
   try {
-    const response = await fetch(`${API_BASE}/get-metadata?type=surah-list`);
+    const response = await fetch(`${API_BASE}/chapters`); // Updated endpoint based on standard Quran.com API
     
     if (!response.ok) {
       throw new Error(`Failed to fetch surahs: ${response.status}`);
@@ -86,7 +86,7 @@ export async function fetchSurahs(): Promise<SurahMetadata[]> {
     const data = await response.json();
     
     // Handle different possible response structures
-    const surahsData = Array.isArray(data) ? data : data.defaultData?.surahs || data.surahs || data.chapters || [];
+    const surahsData = Array.isArray(data) ? data : data.chapters || []; // Use data.chapters for standard API
     
     if (!Array.isArray(surahsData)) {
       throw new Error('Invalid surahs data structure');
@@ -110,7 +110,7 @@ export async function fetchVerses(surahNumber: number): Promise<VerseData[]> {
   if (cached) return cached;
 
   try {
-    const response = await fetch(`${API_BASE}/get-verses?surah=${surahNumber}`);
+    const response = await fetch(`${API_BASE}/verses/by_chapter/${surahNumber}`); // Updated endpoint
     
     if (!response.ok) {
       throw new Error(`Failed to fetch verses: ${response.status}`);
@@ -118,12 +118,23 @@ export async function fetchVerses(surahNumber: number): Promise<VerseData[]> {
     
     const data = await response.json();
     
-    if (!Array.isArray(data)) {
+    if (!Array.isArray(data.verses)) { // Standard API returns data.verses
       throw new Error('Invalid verses data structure');
     }
 
-    setCachedData(cacheKey, data);
-    return data;
+    // Map standard API response to VerseData interface
+    const versesData: VerseData[] = data.verses.map((v: any) => ({
+      id: v.id,
+      surahId: v.chapter_id,
+      numberInSurah: v.verse_number,
+      text: v.text_uthmani, // Use Uthmani text
+      juz: v.juz_number,
+      hizbQuarter: v.hizb_number,
+      sajda: v.sajdah_type !== null,
+    }));
+
+    setCachedData(cacheKey, versesData);
+    return versesData;
     
   } catch (error) {
     console.error('Error fetching verses:', error);
@@ -144,20 +155,43 @@ export async function fetchVerseWithTranslation(
   if (cached) return cached;
 
   try {
-    const response = await fetch(
-      `${API_BASE}/get-translated-verse?surah=${surahNumber}&ayah=${verseNumber}&translator=${translator}`
+    // Fetch Arabic text
+    const arabicVerseResponse = await fetch(`${API_BASE}/verses/by_key/${surahNumber}:${verseNumber}`);
+    if (!arabicVerseResponse.ok) {
+       throw new Error(`Failed to fetch arabic verse: ${arabicVerseResponse.status}`);
+    }
+    const arabicVerseData = await arabicVerseResponse.json();
+    const arabicVerse = arabicVerseData.verse;
+
+    // Fetch translation
+    const translationResponse = await fetch(
+      `${API_BASE}/verses/by_key/${surahNumber}:${verseNumber}?translations=${translator}`
     );
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch verse translation: ${response.status}`);
+    if (!translationResponse.ok) {
+      throw new Error(`Failed to fetch verse translation: ${translationResponse.status}`);
     }
     
-    const data = await response.json();
-    setCachedData(cacheKey, data);
-    return data;
+    const translationData = await translationResponse.json();
+    const translationVerse = translationData.verse;
+
+    const verseData: VerseData = {
+      id: arabicVerse.id,
+      surahId: arabicVerse.chapter_id,
+      numberInSurah: arabicVerse.verse_number,
+      text: arabicVerse.text_uthmani,
+      translation: translationVerse.translations?.[0]?.text || 'Translation not available',
+      transliteration: translationVerse.text_imlaei_simple || undefined, // Use simple transliteration if available
+      juz: arabicVerse.juz_number,
+      hizbQuarter: arabicVerse.hizb_number,
+      sajda: arabicVerse.sajdah_type !== null,
+    };
+
+    setCachedData(cacheKey, verseData);
+    return verseData;
     
   } catch (error) {
-    console.error('Error fetching verse translation:', error);
+    console.error('Error fetching verse with translation:', error);
     throw error;
   }
 }
@@ -172,21 +206,40 @@ export async function fetchVersesWithTranslations(
   translator: string = 'en.yusufali'
 ): Promise<VerseData[]> {
   try {
-    // First get the basic verses to know how many there are
-    const verses = await fetchVerses(surahNumber);
-    
-    const start = startVerse || 1;
-    const end = endVerse || verses.length;
-    
-    // Fetch translations for the requested range
-    const translationPromises = [];
-    for (let i = start; i <= end; i++) {
-      translationPromises.push(fetchVerseWithTranslation(surahNumber, i, translator));
+    // Fetch verses with translation for the requested range
+    const response = await fetch(
+      `${API_BASE}/verses/by_chapter/${surahNumber}?translations=${translator}&per_page=286` // Fetch all verses for the surah
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch verses with translations: ${response.status}`);
     }
-    
-    const translatedVerses = await Promise.all(translationPromises);
-    return translatedVerses;
-    
+
+    const data = await response.json();
+
+    if (!Array.isArray(data.verses)) {
+      throw new Error('Invalid verses data structure');
+    }
+
+    // Map standard API response to VerseData interface
+    const versesData: VerseData[] = data.verses.map((v: any) => ({
+      id: v.id,
+      surahId: v.chapter_id,
+      numberInSurah: v.verse_number,
+      text: v.text_uthmani,
+      translation: v.translations?.[0]?.text || 'Translation not available',
+      transliteration: v.text_imlaei_simple || undefined,
+      juz: v.juz_number,
+      hizbQuarter: v.hizb_number,
+      sajda: v.sajdah_type !== null,
+    }));
+
+    // Filter by start and end verse if specified
+    const start = startVerse || 1;
+    const end = endVerse || versesData.length;
+
+    return versesData.filter(v => v.numberInSurah >= start && v.numberInSurah <= end);
+
   } catch (error) {
     console.error('Error fetching verses with translations:', error);
     throw error;
@@ -202,7 +255,8 @@ export async function fetchSurahDescription(surahNumber: number): Promise<SurahD
   if (cached) return cached;
 
   try {
-    const response = await fetch(`${API_BASE}/get-surah-description?surahId=${surahNumber}`);
+    // Assuming the luminous-verses-api is still needed for descriptions
+    const response = await fetch(`https://luminous-verses-api-tan.vercel.app/api/v1/get-surah-description?surahId=${surahNumber}`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch surah description: ${response.status}`);
@@ -278,11 +332,11 @@ export async function searchVerses(query: string, surahNumber?: number): Promise
       });
       
       const results = await Promise.all(searchPromises);
-      return results.flat();
+      return results.flat(); // Flatten the array of arrays
     }
   } catch (error) {
     console.error('Error searching verses:', error);
-    return [];
+    return []; // Return empty array on error
   }
 }
 

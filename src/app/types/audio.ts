@@ -87,13 +87,13 @@ export interface ReciterInfo {
   baseUrl: string;
 }
 
-// Default reciter configuration
+// Default reciter configuration using environment variables
 export const DEFAULT_RECITER: ReciterInfo = {
-  id: 'alafasy128',
-  name: 'Mishary Al-Afasy',
-  arabicName: 'مشاري العفاسي',
-  quality: '128',
-  baseUrl: 'https://h2zfzwpeaxcsfu9s.public.blob.vercel-storage.com/quran-audio/alafasy128/'
+  id: process.env.NEXT_PUBLIC_AUDIO_CDN_RECITER || 'alafasy128', // Use env var or fallback
+  name: 'Mishary Al-Afasy', // This might need to be dynamic based on reciter ID if we add more
+  arabicName: 'مشاري العفاسي', // This might need to be dynamic based on reciter ID if we add more
+  quality: '128', // This might need to be dynamic based on reciter ID if we add more
+  baseUrl: process.env.NEXT_PUBLIC_AUDIO_CDN_URL_TEMPLATE || 'https://verses.quran.com/{reciter}/{surah}/{verse}.mp3' // Use env var or fallback
 };
 
 // Audio format configuration
