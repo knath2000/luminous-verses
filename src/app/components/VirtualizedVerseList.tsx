@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 import { fetchVersesBatch, VerseData } from '../utils/quranApi';
@@ -26,15 +26,41 @@ interface VerseItemProps {
     showTransliteration: boolean;
     onVerseClick?: (verse: VerseData) => void;
     surahNumber: number;
+    setSize: (index: number, size: number) => void;
   };
 }
 
-const BASE_ITEM_HEIGHT = 300; // Base height for each verse item (increased for glass morphism design)
+// Custom hook for dynamic item sizing
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const useDynamicItemSize = (_itemCount: number) => {
+  const listRef = useRef<List>(null);
+  const sizeMap = useRef<{ [key: number]: number }>({});
+
+  const setSize = useCallback((index: number, size: number) => {
+    sizeMap.current = { ...sizeMap.current, [index]: size };
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(index);
+    }
+  }, []);
+
+  const getSize = useCallback((index: number): number => {
+    return sizeMap.current[index] || 400; // Generous default height for Arabic + transliteration
+  }, []);
+
+  const resetAfterIndex = useCallback((index: number, shouldForceUpdate = true) => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(index, shouldForceUpdate);
+    }
+  }, []);
+
+  return { listRef, setSize, getSize, resetAfterIndex };
+};
+
 const CHUNK_SIZE = 20; // Load 20 verses at a time
 
 // Skeleton component for loading verses with glass morphism design
 const VerseSkeleton: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
-  <div style={style} className="p-6 mb-6">
+  <div style={{ ...style, padding: '24px', marginBottom: '24px' }}>
     <div className="glass-morphism p-6 rounded-xl border border-white/10 animate-pulse">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -50,12 +76,22 @@ const VerseSkeleton: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
   </div>
 );
 
-// Individual verse item component with glass morphism design
+// Individual verse item component with dynamic height measurement
 const VerseItem: React.FC<VerseItemProps> = ({ index, style, data }) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { verses, isItemLoaded, showTransliteration, onVerseClick, surahNumber } = data;
+  const { verses, isItemLoaded, showTransliteration, onVerseClick, surahNumber, setSize } = data;
   const { isAudioReady } = useUserGesture();
+  const itemRef = useRef<HTMLDivElement>(null);
   const verse = verses[index];
+
+  // Measure actual content height after render
+  useEffect(() => {
+    if (itemRef.current && verse) {
+      const height = itemRef.current.getBoundingClientRect().height;
+      // Add buffer to prevent tight spacing and account for margins
+      setSize(index, height + 48); // 48px buffer for spacing
+    }
+  }, [verse, showTransliteration, index, setSize]);
 
   if (!isItemLoaded(index)) {
     return <VerseSkeleton style={style} />;
@@ -66,7 +102,15 @@ const VerseItem: React.FC<VerseItemProps> = ({ index, style, data }) => {
   }
 
   return (
-    <div style={style} className="p-6 mb-6">
+    <div 
+      ref={itemRef}
+      style={{ 
+        ...style, 
+        overflow: 'visible',
+        padding: '24px',
+        marginBottom: '24px'
+      }}
+    >
       <ClickableVerseContainer
         surah={surahNumber}
         verse={verse.numberInSurah}
@@ -104,7 +148,7 @@ const VerseItem: React.FC<VerseItemProps> = ({ index, style, data }) => {
           
           {/* Transliteration */}
           {showTransliteration && verse.transliteration && (
-            <TransliterationDisplay
+            <TransliterationDisplay 
               transliteration={verse.transliteration}
               size="medium"
               className="mb-4"
@@ -171,39 +215,49 @@ export const VirtualizedVerseList: React.FC<VirtualizedVerseListProps> = ({
   const [verses, setVerses] = useState<(VerseData | undefined)[]>(
     new Array(totalVerses).fill(undefined)
   );
-  const [loadingChunks, setLoadingChunks] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  
+  // Use refs to track loading state without causing re-renders
+  const loadingChunksRef = useRef<Set<number>>(new Set());
+  const isLoadingRef = useRef<boolean>(false);
+  
+  // Dynamic sizing hook
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { listRef, setSize, getSize, resetAfterIndex } = useDynamicItemSize(totalVerses);
 
   // Check if an item is loaded
   const isItemLoaded = useCallback((index: number): boolean => {
     return verses[index] !== undefined;
   }, [verses]);
 
-  // Load more items function
+  // Load more items function with stable dependencies
   const loadMoreItems = useCallback(async (startIndex: number, stopIndex: number): Promise<void> => {
-    // Calculate which chunk this range belongs to
+    // Prevent multiple simultaneous loads
+    if (isLoadingRef.current) {
+      return;
+    }
+
+    // Calculate which chunks we need to load
     const startChunk = Math.floor(startIndex / CHUNK_SIZE);
     const endChunk = Math.floor(stopIndex / CHUNK_SIZE);
     
-    // Load all chunks in the range
     const chunksToLoad: number[] = [];
     for (let chunk = startChunk; chunk <= endChunk; chunk++) {
-      if (!loadingChunks.has(chunk)) {
+      if (!loadingChunksRef.current.has(chunk)) {
         chunksToLoad.push(chunk);
       }
     }
 
-    if (chunksToLoad.length === 0) return;
+    if (chunksToLoad.length === 0) {
+      return; // Nothing to load
+    }
 
     // Mark chunks as loading
-    setLoadingChunks(prev => {
-      const newSet = new Set(prev);
-      chunksToLoad.forEach(chunk => newSet.add(chunk));
-      return newSet;
-    });
+    chunksToLoad.forEach(chunk => loadingChunksRef.current.add(chunk));
+    isLoadingRef.current = true;
 
     try {
-      // Load chunks in parallel
+      // Load all chunks in parallel
       const chunkPromises = chunksToLoad.map(async (chunk) => {
         const start = chunk * CHUNK_SIZE + 1;
         const end = Math.min((chunk + 1) * CHUNK_SIZE, totalVerses);
@@ -244,17 +298,18 @@ export const VirtualizedVerseList: React.FC<VirtualizedVerseListProps> = ({
       setError('Failed to load verses. Please try again.');
     } finally {
       // Mark chunks as no longer loading
-      setLoadingChunks(prev => {
-        const newSet = new Set(prev);
-        chunksToLoad.forEach(chunk => newSet.delete(chunk));
-        return newSet;
-      });
+      chunksToLoad.forEach(chunk => loadingChunksRef.current.delete(chunk));
+      isLoadingRef.current = false;
     }
-  }, [surahNumber, totalVerses, settings.showTransliteration, loadingChunks]);
+  }, [surahNumber, totalVerses, settings.showTransliteration]);
 
-  // Preload first chunk on mount
+  // Preload first chunk on mount - use a flag to prevent multiple calls
+  const hasInitializedRef = useRef(false);
   useEffect(() => {
-    loadMoreItems(0, CHUNK_SIZE - 1);
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      loadMoreItems(0, CHUNK_SIZE - 1);
+    }
   }, [loadMoreItems]);
 
   // Memoized item data to prevent unnecessary re-renders
@@ -264,22 +319,22 @@ export const VirtualizedVerseList: React.FC<VirtualizedVerseListProps> = ({
     isItemLoaded,
     showTransliteration: settings.showTransliteration,
     onVerseClick,
-    surahNumber
-  }), [verses, loadMoreItems, isItemLoaded, settings.showTransliteration, onVerseClick, surahNumber]);
+    surahNumber,
+    setSize
+  }), [verses, loadMoreItems, isItemLoaded, settings.showTransliteration, onVerseClick, surahNumber, setSize]);
 
-  // Calculate item height based on content
-  const getItemSize = useCallback((index: number): number => {
-    const verse = verses[index];
-    if (!verse) return BASE_ITEM_HEIGHT;
-    
-    // Base height + additional height for transliteration if enabled
-    let height = BASE_ITEM_HEIGHT;
-    if (settings.showTransliteration && verse.transliteration) {
-      height += 50; // Additional height for transliteration
-    }
-    
-    return height;
-  }, [verses, settings.showTransliteration]);
+  // Force remeasurement when transliteration setting changes
+  useEffect(() => {
+    resetAfterIndex(0);
+  }, [settings.showTransliteration, resetAfterIndex]);
+
+  // Force initial measurement after first render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      resetAfterIndex(0);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [resetAfterIndex]);
 
   if (error) {
     return (
@@ -289,6 +344,8 @@ export const VirtualizedVerseList: React.FC<VirtualizedVerseListProps> = ({
           <button 
             onClick={() => {
               setError(null);
+              hasInitializedRef.current = false;
+              loadingChunksRef.current.clear();
               loadMoreItems(0, CHUNK_SIZE - 1);
             }}
             className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
@@ -310,11 +367,15 @@ export const VirtualizedVerseList: React.FC<VirtualizedVerseListProps> = ({
       >
         {({ onItemsRendered, ref }) => (
           <List
-            ref={ref}
-            height={window.innerHeight * 0.7} // 70% of viewport height
+            ref={(node) => {
+              // Combine refs
+              if (typeof ref === 'function') ref(node);
+              if (listRef) listRef.current = node;
+            }}
+            height={typeof window !== 'undefined' ? window.innerHeight * 0.7 : 500} // 70% of viewport height with SSR safety
             width="100%" // Full width
             itemCount={totalVerses}
-            itemSize={getItemSize}
+            itemSize={getSize}
             itemData={itemData}
             onItemsRendered={onItemsRendered}
             overscanCount={2} // Render 2 extra items outside viewport for performance
