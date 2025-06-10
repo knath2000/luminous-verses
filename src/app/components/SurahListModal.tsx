@@ -6,6 +6,7 @@ import { useUserGesture } from '../contexts/UserGestureContext';
 
 import { ClickableVerseContainer } from './ClickableVerseContainer';
 import SurahDescriptionHeader from './SurahDescriptionHeader';
+import TransliterationDisplay from './TransliterationDisplay';
 import {
   fetchSurahs,
   fetchVersesWithTranslations,
@@ -133,6 +134,13 @@ const VerseItem = ({ verse, surahNumber }: { verse: VerseData; surahNumber: numb
         <p className="text-white text-2xl md:text-3xl lg:text-4xl leading-relaxed font-[family-name:var(--font-amiri)] mb-6" dir="rtl">
           {verse.text}
         </p>
+        
+        {/* Transliteration */}
+        <TransliterationDisplay 
+          transliteration={verse.transliteration}
+          size="medium"
+          className="mb-4"
+        />
         
         {/* English Translation */}
         {verse.translation && (

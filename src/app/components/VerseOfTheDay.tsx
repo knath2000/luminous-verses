@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClickableVerseContainer } from './ClickableVerseContainer';
 import { getVerseOfTheDay, getSurahName } from '../utils/quranApi';
+import TransliterationDisplay from './TransliterationDisplay';
 
 interface Verse {
   surah: number;
@@ -31,7 +32,7 @@ export function VerseOfTheDay() {
           surah: verseData.surahId,
           verse: verseData.numberInSurah,
           arabicText: verseData.text,
-          transliteration: '', // API doesn't provide transliteration yet
+          transliteration: verseData.transliteration || '', // Now includes transliteration from API
           translation: verseData.translation || '',
           surahName: surahName
         };
@@ -132,9 +133,11 @@ export function VerseOfTheDay() {
 
           {/* Transliteration */}
           <div className="text-center">
-            <p className="text-gray-300 italic text-lg md:text-xl leading-relaxed">
-              {currentVerse.transliteration}
-            </p>
+            <TransliterationDisplay 
+              transliteration={currentVerse.transliteration}
+              size="large"
+              showLabel={true}
+            />
           </div>
 
           {/* Translation */}
@@ -188,9 +191,11 @@ export function VerseCard({ verse, className = '' }: VerseCardProps) {
         </div>
 
         {/* Transliteration */}
-        <div className="text-gray-300 italic text-sm">
-          {verse.transliteration}
-        </div>
+        <TransliterationDisplay 
+          transliteration={verse.transliteration}
+          size="small"
+          className="my-2"
+        />
 
         {/* Translation */}
         <div className="text-gray-200 text-sm leading-relaxed border-t border-gray-700/50 pt-3">
