@@ -2,16 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useUserGesture } from '../contexts/UserGestureContext';
 
-import { ClickableVerseContainer } from './ClickableVerseContainer';
 import SurahDescriptionHeader from './SurahDescriptionHeader';
-import TransliterationDisplay from './TransliterationDisplay';
+import VirtualizedVerseList from './VirtualizedVerseList';
 import {
   fetchSurahs,
-  fetchVersesWithTranslations,
-  SurahMetadata,
-  VerseData
+  SurahMetadata
 } from '../utils/quranApi';
 
 // Modal view type
@@ -60,136 +56,7 @@ const useSurahs = () => {
   return { surahs, loading, error, refetch: loadSurahs };
 };
 
-// Custom hook for fetching verses with translations using the new API
-const useVerses = (surahNumber: number | null) => {
-  const [verses, setVerses] = useState<VerseData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadVerses = async (surahNum: number) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch verses with translations using the new API
-      const versesData = await fetchVersesWithTranslations(surahNum);
-      console.log('Verses with translations:', versesData);
-      
-      setVerses(versesData);
-      
-    } catch (err) {
-      console.error('Error fetching verses:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load verses');
-      setVerses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (surahNumber) {
-      loadVerses(surahNumber);
-    }
-  }, [surahNumber]);
-
-  return { verses, loading, error, refetch: () => surahNumber && loadVerses(surahNumber) };
-};
-
-// Individual Verse Item Component
-const VerseItem = ({ verse, surahNumber }: { verse: VerseData; surahNumber: number }) => {
-  const { isAudioReady } = useUserGesture();
-  
-  return (
-    <ClickableVerseContainer
-      surah={surahNumber}
-      verse={verse.numberInSurah}
-      className="glass-morphism p-6 rounded-xl border border-white/10 hover:border-gold/40 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-gold/10"
-      showPlayButton={true}
-      playButtonPosition="top-right"
-    >
-      {/* Audio Unlock Hint */}
-      {!isAudioReady && (
-        <div className="absolute top-4 left-4 bg-purple-500/20 px-3 py-1 rounded-full backdrop-blur-sm z-20">
-          <span className="text-purple-300 text-xs font-medium">Tap to unlock audio</span>
-        </div>
-      )}
-
-      {/* Verse Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold font-bold text-sm">
-            {verse.numberInSurah}
-          </div>
-        </div>
-        {verse.sajda && (
-          <div className="flex items-center gap-2 bg-purple-500/20 px-3 py-1 rounded-full">
-            <span className="text-purple-300 text-xs font-medium">SAJDA</span>
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-          </div>
-        )}
-      </div>
-
-      {/* Arabic Text */}
-      <div className="text-center mb-6">
-        <p className="text-white text-2xl md:text-3xl lg:text-4xl leading-relaxed font-[family-name:var(--font-amiri)] mb-6" dir="rtl">
-          {verse.text}
-        </p>
-        
-        {/* Transliteration */}
-        <TransliterationDisplay 
-          transliteration={verse.transliteration}
-          size="medium"
-          className="mb-4"
-        />
-        
-        {/* English Translation */}
-        {verse.translation && (
-          <div className="border-t border-white/10 pt-4">
-            <p className="text-white/90 text-lg md:text-xl leading-relaxed font-medium italic" dir="ltr">
-              &ldquo;{verse.translation}&rdquo;
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 justify-center">
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-purple-500/20 transition-all duration-300"
-        >
-          <svg className="w-4 h-4 text-purple-300 group-hover:animate-bounce" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-          </svg>
-          <span className="text-white text-sm font-medium">Save</span>
-        </button>
-
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-blue-500/20 transition-all duration-300"
-        >
-          <svg className="w-4 h-4 text-blue-300 group-hover:animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-          </svg>
-          <span className="text-white text-sm font-medium">Share</span>
-        </button>
-      </div>
-
-      {/* Metadata */}
-      <div className="mt-4 pt-4 border-t border-white/10 flex justify-between text-xs text-white/60">
-        <span>Juz {verse.juz}</span>
-        <span>Hizb Quarter {verse.hizbQuarter}</span>
-      </div>
-
-      {/* Click instruction */}
-      <div className="mt-4 text-center">
-        <p className="text-gray-400 text-xs">
-          Click anywhere on the verse card to play audio recitation
-        </p>
-      </div>
-    </ClickableVerseContainer>
-  );
-};
 
 // Individual Surah Item Component
 const SurahItem = ({ surah, onClick }: { surah: SurahMetadata; onClick: () => void }) => {
@@ -236,8 +103,6 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
   const [selectedSurah, setSelectedSurah] = useState<SurahMetadata | null>(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
   
-  // Fetch verses when a surah is selected
-  const { verses, loading: versesLoading, error: versesError, refetch: refetchVerses } = useVerses(selectedSurah?.number || null);
   
   
 
@@ -405,53 +270,11 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
                   onToggle={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                 />
 
-                {versesLoading && (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gold/30 border-t-gold mb-4"></div>
-                    <p className="text-white/70 text-lg">Loading verses...</p>
-                  </div>
-                )}
-
-                {versesError && (
-                  <div className="text-center py-12">
-                    <div className="text-red-400 mb-4">
-                      <svg className="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      <p className="text-lg">{versesError}</p>
-                    </div>
-                    <button
-                      onClick={refetchVerses}
-                      className="glass-morphism px-6 py-3 rounded-full text-gold hover:bg-gold/20 transition-all duration-300"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                )}
-
-                {!versesLoading && !versesError && verses.length > 0 && (
-                  <div className="space-y-6">
-                    {verses.map((verse) => (
-                      <VerseItem
-                        key={verse.id}
-                        verse={verse}
-                        surahNumber={selectedSurah.number}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {!versesLoading && !versesError && verses.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-white/70 text-lg">No verses found for this surah.</p>
-                    <button
-                      onClick={handleBackToList}
-                      className="glass-morphism px-6 py-3 rounded-full text-gold hover:bg-gold/20 transition-all duration-300 mt-4"
-                    >
-                      Back to Surahs
-                    </button>
-                  </div>
-                )}
+                {/* Virtualized Verse List */}
+                <VirtualizedVerseList
+                  surahNumber={selectedSurah.number}
+                  totalVerses={selectedSurah.ayas}
+                />
               </>
             )}
           </div>

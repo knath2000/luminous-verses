@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FixedSizeList as List } from 'react-window';
+import { VariableSizeList as List } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 import { fetchVersesBatch, VerseData } from '../utils/quranApi';
 import TransliterationDisplay from './TransliterationDisplay';
+import { ClickableVerseContainer } from './ClickableVerseContainer';
 import { useSettings } from '../contexts/SettingsContext';
+import { useUserGesture } from '../contexts/UserGestureContext';
 
 interface VirtualizedVerseListProps {
   surahNumber: number;
@@ -23,31 +25,36 @@ interface VerseItemProps {
     isItemLoaded: (index: number) => boolean;
     showTransliteration: boolean;
     onVerseClick?: (verse: VerseData) => void;
+    surahNumber: number;
   };
 }
 
-const ITEM_HEIGHT = 120; // Base height for each verse item
+const BASE_ITEM_HEIGHT = 300; // Base height for each verse item (increased for glass morphism design)
 const CHUNK_SIZE = 20; // Load 20 verses at a time
 
-// Skeleton component for loading verses
+// Skeleton component for loading verses with glass morphism design
 const VerseSkeleton: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
-  <div style={style} className="p-4 border-b border-purple-100">
-    <div className="animate-pulse">
-      <div className="flex items-start space-x-4">
-        <div className="w-8 h-8 bg-purple-200 rounded-full"></div>
-        <div className="flex-1 space-y-2">
-          <div className="h-4 bg-purple-200 rounded w-3/4"></div>
-          <div className="h-4 bg-purple-200 rounded w-1/2"></div>
-          <div className="h-3 bg-purple-100 rounded w-2/3"></div>
+  <div style={style} className="p-6 mb-6">
+    <div className="glass-morphism p-6 rounded-xl border border-white/10 animate-pulse">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gold/20"></div>
         </div>
+      </div>
+      <div className="text-center mb-6">
+        <div className="h-8 bg-white/10 rounded mb-4"></div>
+        <div className="h-6 bg-white/10 rounded mb-4"></div>
+        <div className="h-4 bg-white/10 rounded"></div>
       </div>
     </div>
   </div>
 );
 
-// Individual verse item component
+// Individual verse item component with glass morphism design
 const VerseItem: React.FC<VerseItemProps> = ({ index, style, data }) => {
-  const { verses, isItemLoaded, showTransliteration, onVerseClick } = data;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { verses, isItemLoaded, showTransliteration, onVerseClick, surahNumber } = data;
+  const { isAudioReady } = useUserGesture();
   const verse = verses[index];
 
   if (!isItemLoaded(index)) {
@@ -59,42 +66,97 @@ const VerseItem: React.FC<VerseItemProps> = ({ index, style, data }) => {
   }
 
   return (
-    <div 
-      style={style} 
-      className="p-4 border-b border-purple-100 hover:bg-purple-50/30 transition-colors cursor-pointer"
-      onClick={() => onVerseClick?.(verse)}
-    >
-      <div className="flex items-start space-x-4">
-        {/* Verse number */}
-        <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-          {verse.numberInSurah}
-        </div>
-        
-        {/* Verse content */}
-        <div className="flex-1 space-y-2">
-          {/* Arabic text */}
-          <div className="text-right text-lg leading-relaxed font-arabic text-gray-800" dir="rtl">
-            {verse.text}
+    <div style={style} className="p-6 mb-6">
+      <ClickableVerseContainer
+        surah={surahNumber}
+        verse={verse.numberInSurah}
+        className="glass-morphism p-6 rounded-xl border border-white/10 hover:border-gold/40 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-gold/10"
+        showPlayButton={true}
+        playButtonPosition="top-right"
+      >
+        {/* Audio Unlock Hint */}
+        {!isAudioReady && (
+          <div className="absolute top-4 left-4 bg-purple-500/20 px-3 py-1 rounded-full backdrop-blur-sm z-20">
+            <span className="text-purple-300 text-xs font-medium">Tap to unlock audio</span>
           </div>
-          
-          {/* Translation */}
-          {verse.translation && (
-            <div className="text-gray-700 leading-relaxed">
-              {verse.translation}
+        )}
+
+        {/* Verse Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold font-bold text-sm">
+              {verse.numberInSurah}
+            </div>
+          </div>
+          {verse.sajda && (
+            <div className="flex items-center gap-2 bg-purple-500/20 px-3 py-1 rounded-full">
+              <span className="text-purple-300 text-xs font-medium">SAJDA</span>
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
             </div>
           )}
+        </div>
+
+        {/* Arabic Text */}
+        <div className="text-center mb-6">
+          <p className="text-white text-2xl md:text-3xl lg:text-4xl leading-relaxed font-[family-name:var(--font-amiri)] mb-6" dir="rtl">
+            {verse.text}
+          </p>
           
           {/* Transliteration */}
           {showTransliteration && verse.transliteration && (
-            <div className="mt-2">
-              <TransliterationDisplay 
-                transliteration={verse.transliteration}
-                showLabel={false}
-              />
+            <TransliterationDisplay
+              transliteration={verse.transliteration}
+              size="medium"
+              className="mb-4"
+            />
+          )}
+          
+          {/* English Translation */}
+          {verse.translation && (
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-white/90 text-lg md:text-xl leading-relaxed font-medium italic" dir="ltr">
+                &ldquo;{verse.translation}&rdquo;
+              </p>
             </div>
           )}
         </div>
-      </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-purple-500/20 transition-all duration-300"
+          >
+            <svg className="w-4 h-4 text-purple-300 group-hover:animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+            </svg>
+            <span className="text-white text-sm font-medium">Save</span>
+          </button>
+
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="group flex items-center gap-2 glass-morphism px-4 py-2 rounded-full hover:bg-blue-500/20 transition-all duration-300"
+          >
+            <svg className="w-4 h-4 text-blue-300 group-hover:animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+            </svg>
+            <span className="text-white text-sm font-medium">Share</span>
+          </button>
+        </div>
+
+        {/* Metadata */}
+        <div className="mt-4 pt-4 border-t border-white/10 flex justify-between text-xs text-white/60">
+          <span>Juz {verse.juz}</span>
+          <span>Hizb Quarter {verse.hizbQuarter}</span>
+        </div>
+
+        {/* Click instruction */}
+        <div className="mt-4 text-center">
+          <p className="text-gray-400 text-xs">
+            Click anywhere on the verse card to play audio recitation
+          </p>
+        </div>
+      </ClickableVerseContainer>
     </div>
   );
 };
@@ -201,8 +263,23 @@ export const VirtualizedVerseList: React.FC<VirtualizedVerseListProps> = ({
     loadMoreItems,
     isItemLoaded,
     showTransliteration: settings.showTransliteration,
-    onVerseClick
-  }), [verses, loadMoreItems, isItemLoaded, settings.showTransliteration, onVerseClick]);
+    onVerseClick,
+    surahNumber
+  }), [verses, loadMoreItems, isItemLoaded, settings.showTransliteration, onVerseClick, surahNumber]);
+
+  // Calculate item height based on content
+  const getItemSize = useCallback((index: number): number => {
+    const verse = verses[index];
+    if (!verse) return BASE_ITEM_HEIGHT;
+    
+    // Base height + additional height for transliteration if enabled
+    let height = BASE_ITEM_HEIGHT;
+    if (settings.showTransliteration && verse.transliteration) {
+      height += 50; // Additional height for transliteration
+    }
+    
+    return height;
+  }, [verses, settings.showTransliteration]);
 
   if (error) {
     return (
@@ -224,24 +301,24 @@ export const VirtualizedVerseList: React.FC<VirtualizedVerseListProps> = ({
   }
 
   return (
-    <div className={`h-full ${className}`}>
+    <div className={`${className}`} style={{ height: '70vh', minHeight: '500px' }}>
       <InfiniteLoader
         isItemLoaded={isItemLoaded}
         itemCount={totalVerses}
         loadMoreItems={loadMoreItems}
-        threshold={5} // Start loading when 5 items away from the end
+        threshold={3} // Start loading when 3 items away from the end
       >
         {({ onItemsRendered, ref }) => (
           <List
             ref={ref}
-            height={600} // Fixed height for the virtualized list
+            height={window.innerHeight * 0.7} // 70% of viewport height
             width="100%" // Full width
             itemCount={totalVerses}
-            itemSize={ITEM_HEIGHT}
+            itemSize={getItemSize}
             itemData={itemData}
             onItemsRendered={onItemsRendered}
-            overscanCount={5} // Render 5 extra items outside viewport
-            className="scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-100"
+            overscanCount={2} // Render 2 extra items outside viewport for performance
+            className="scrollbar-thin scrollbar-thumb-gold/30 scrollbar-track-transparent"
           >
             {VerseItem}
           </List>
