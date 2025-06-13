@@ -2,13 +2,25 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import dynamic from 'next/dynamic'; // Import dynamic from next/dynamic
 
 import SurahDescriptionHeader from './SurahDescriptionHeader';
-import VirtualizedVerseList from './VirtualizedVerseList';
 import {
   fetchSurahs,
   SurahMetadata
 } from '../utils/quranApi';
+
+// Dynamically import VerseListContainer with ssr: false
+const VerseListContainer = dynamic(() => import('./VerseListContainer'), { 
+  ssr: false,
+  loading: () => (
+    <div className="flex-grow overflow-hidden h-full flex flex-col items-center justify-center p-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-gold/30 border-t-gold mb-4"></div>
+      <p className="text-white/70 text-lg mt-4">Loading verses...</p>
+    </div>
+  ),
+});
+
 
 // Modal view type
 type ModalView = 'list' | 'detail';
@@ -91,7 +103,7 @@ const SurahItem = ({ surah, onClick }: { surah: SurahMetadata; onClick: () => vo
     </button>
   );
 };
-
+ 
 // Main Modal Component
 const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
   const { surahs, loading, error, refetch } = useSurahs();
@@ -102,28 +114,17 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
   const [currentView, setCurrentView] = useState<ModalView>('list');
   const [selectedSurah, setSelectedSurah] = useState<SurahMetadata | null>(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
-  
-  
-  
 
+  // Modal open/close logic
   useEffect(() => {
     if (isOpen) {
-      // Store the currently focused element
       previouslyFocusedElement.current = document.activeElement as HTMLElement;
-      
-      // Focus the modal
       modalRef.current?.focus();
-      
-      // Lock body scroll
       document.body.style.overflow = 'hidden';
     } else {
-      // Restore body scroll
       document.body.style.overflow = '';
-      
-      // Restore focus to previously focused element
       previouslyFocusedElement.current?.focus();
     }
-
     return () => {
       document.body.style.overflow = '';
     };
@@ -150,12 +151,13 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
   };
 
   const handleBackToList = () => {
+    console.log('Back to list clicked');
     setCurrentView('list');
     setSelectedSurah(null);
   };
 
   
-
+  
   if (!isOpen) return null;
 
   const modalRoot = document.getElementById('modal-root');
@@ -182,17 +184,14 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
         className="fixed inset-0 flex items-center justify-center p-4"
       >
         <div 
-          className="relative w-full max-w-4xl max-h-[90vh] glass-morphism-dark rounded-3xl shadow-2xl overflow-hidden"
+          className="relative w-full max-w-4xl h-[90vh] glass-morphism-dark rounded-3xl shadow-2xl overflow-hidden flex flex-col"
           onClick={e => e.stopPropagation()}
         >
           
-
-          
-
           {/* Content */}
-          <div className="relative z-10 p-6 overflow-y-auto max-h-[90vh]">
+          <div className="relative z-10 flex flex-col flex-grow h-full">
             {currentView === 'list' && (
-              <>
+              <div className="p-6 overflow-y-auto h-full">
                 {/* Title for List View */}
                 <div className="text-center mb-8">
                   <h2 id="modal-title" className="text-3xl md:text-4xl font-bold text-gradient-gold mb-2">
@@ -236,50 +235,49 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             )}
 
             {currentView === 'detail' && selectedSurah && (
-              <>
-                {/* Surah Header - Now part of scrollable content */}
-                <div className="mb-6 text-center">
-                  <h2 className="text-2xl md:text-3xl font-bold text-gradient-gold mb-2">
-                    {selectedSurah.ename}
-                  </h2>
-                  <div className="flex items-center justify-center gap-4">
-                    <p className="text-white/70 font-[family-name:var(--font-amiri)] text-lg">
-                      {selectedSurah.name}
-                    </p>
-                    <span className="text-gold/80 text-sm">
-                      {selectedSurah.type} • {selectedSurah.ayas} verses
-                    </span>
+              <div className="flex flex-col h-full">
+                {/* Fixed Header Section */}
+                <div className="p-6 pb-4 border-b border-white/10">
+                  <div className="text-center mb-4">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gradient-gold mb-2">
+                      {selectedSurah.ename}
+                    </h2>
+                    <div className="flex items-center justify-center gap-4">
+                      <p className="text-white/70 font-[family-name:var(--font-amiri)] text-lg">
+                        {selectedSurah.name}
+                      </p>
+                      <span className="text-gold/80 text-sm">
+                        {selectedSurah.type} • {selectedSurah.ayas} verses
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Surah Description Header */}
+                  <SurahDescriptionHeader
+                    surah={{
+                      number: selectedSurah.number,
+                      name: selectedSurah.name,
+                      englishName: selectedSurah.ename,
+                      englishNameTranslation: selectedSurah.tname,
+                      numberOfAyahs: selectedSurah.ayas,
+                      revelationType: selectedSurah.type
+                    }}
+                    isExpanded={isDescriptionExpanded}
+                    onToggle={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  />
                 </div>
 
-                {/* Surah Description Header - Now part of scrollable content */}
-                <SurahDescriptionHeader
-                  surah={{
-                    number: selectedSurah.number,
-                    name: selectedSurah.name,
-                    englishName: selectedSurah.ename,
-                    englishNameTranslation: selectedSurah.tname,
-                    numberOfAyahs: selectedSurah.ayas,
-                    revelationType: selectedSurah.type
-                  }}
-                  isExpanded={isDescriptionExpanded}
-                  onToggle={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                />
-
-                {/* Virtualized Verse List */}
-                <VirtualizedVerseList
-                  surahNumber={selectedSurah.number}
-                  totalVerses={selectedSurah.ayas}
-                />
-              </>
+                {/* Scrollable Verse List Container */}
+                <div className="flex-grow overflow-hidden">
+                  <VerseListContainer selectedSurah={selectedSurah} />
+                </div>
+              </div>
             )}
           </div>
-
-          
 
           {/* Floating Back Button - positioned halfway down the modal */}
           {currentView === 'detail' && selectedSurah && (

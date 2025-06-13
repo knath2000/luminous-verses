@@ -1,199 +1,125 @@
-'use client';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { VerseData, fetchVersesBatch } from '../utils/quranApi';
 
-import { useState, useEffect, useCallback } from 'react';
-import { fetchVersesBatch, fetchSurahs, VerseData } from '../utils/quranApi';
+
+const PAGE_SIZE = 50; // Number of verses to load per batch
 
 interface UseVirtualizedVersesProps {
-  surahNumber: number;
-  chunkSize?: number;
-  includeTranslations?: boolean;
-  includeTransliterations?: boolean;
+  surahNumber: number | null;
+  totalVersesCount: number;
 }
 
-interface UseVirtualizedVersesReturn {
-  verses: (VerseData | undefined)[];
-  totalVerses: number;
-  loading: boolean;
-  error: string | null;
-  loadMoreItems: (startIndex: number, stopIndex: number) => Promise<void>;
-  isItemLoaded: (index: number) => boolean;
-  retry: () => void;
-}
+export const useVirtualizedVerses = ({ surahNumber, totalVersesCount }: UseVirtualizedVersesProps) => {
+  const [verses, setVerses] = useState<VerseData[]>([]);
+  const [versesLoading, setVersesLoading] = useState(false);
+  const [versesError, setVersesError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const loadedPages = useRef<Set<number>>(new Set());
+  const totalVersesCountRef = useRef(totalVersesCount);
 
-export function useVirtualizedVerses({
-  surahNumber,
-  chunkSize = 20,
-  includeTranslations = true,
-  includeTransliterations = true
-}: UseVirtualizedVersesProps): UseVirtualizedVersesReturn {
-  const [verses, setVerses] = useState<(VerseData | undefined)[]>([]);
-  const [totalVerses, setTotalVerses] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingChunks, setLoadingChunks] = useState<Set<number>>(new Set());
-
-  // Initialize total verses count
+  // Update ref when totalVersesCount changes
   useEffect(() => {
-    const initializeTotalVerses = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const surahs = await fetchSurahs();
-        const surah = surahs.find(s => s.number === surahNumber);
-        
-        if (!surah) {
-          throw new Error(`Surah ${surahNumber} not found`);
-        }
-        
-        const verseCount = surah.ayas;
-        setTotalVerses(verseCount);
-        setVerses(new Array(verseCount).fill(undefined));
-        
-      } catch (err) {
-        console.error('Error initializing verses:', err);
-        setError(err instanceof Error ? err.message : 'Failed to initialize verses');
-      } finally {
-        setLoading(false);
-      }
-    };
+    totalVersesCountRef.current = totalVersesCount;
+  }, [totalVersesCount]);
 
-    initializeTotalVerses();
+  // Reset state when surah changes
+  useEffect(() => {
+    if (surahNumber !== null) {
+      setVerses([]);
+      setHasMore(true);
+      setVersesError(null);
+      loadedPages.current.clear();
+    }
   }, [surahNumber]);
 
-  // Check if an item is loaded
-  const isItemLoaded = useCallback((index: number): boolean => {
-    return verses[index] !== undefined;
+  const isItemLoaded = useCallback((index: number) => {
+    const loaded = !!verses[index];
+    console.log(`🔍 isItemLoaded(${index}):`, loaded, `verses[${index}]:`, verses[index] ? `${verses[index].surahId}:${verses[index].numberInSurah}` : 'undefined');
+    return loaded;
   }, [verses]);
 
-  // Load more items function
-  const loadMoreItems = useCallback(async (startIndex: number, stopIndex: number): Promise<void> => {
-    if (totalVerses === 0) return;
+  const loadMoreItems = useCallback(async (startIndex: number, stopIndex: number) => {
+    const currentTotalVersesCount = totalVersesCountRef.current;
 
-    // Calculate which chunks this range belongs to
-    const startChunk = Math.floor(startIndex / chunkSize);
-    const endChunk = Math.floor(stopIndex / chunkSize);
-    
-    // Find chunks that need loading
-    const chunksToLoad: number[] = [];
-    for (let chunk = startChunk; chunk <= endChunk; chunk++) {
-      if (!loadingChunks.has(chunk)) {
-        // Check if any verse in this chunk is already loaded
-        const chunkStart = chunk * chunkSize;
-        const chunkEnd = Math.min((chunk + 1) * chunkSize - 1, totalVerses - 1);
-        
-        let chunkNeedsLoading = false;
-        for (let i = chunkStart; i <= chunkEnd; i++) {
-          if (!isItemLoaded(i)) {
-            chunkNeedsLoading = true;
-            break;
-          }
-        }
-        
-        if (chunkNeedsLoading) {
-          chunksToLoad.push(chunk);
-        }
+    if (!surahNumber || versesLoading || !hasMore) {
+      return;
+    }
+
+    const startPage = Math.floor(startIndex / PAGE_SIZE);
+    const endPage = Math.floor(stopIndex / PAGE_SIZE);
+
+    const pagesToLoad: number[] = [];
+    for (let i = startPage; i <= endPage; i++) {
+      if (!loadedPages.current.has(i)) {
+        pagesToLoad.push(i);
       }
     }
 
-    if (chunksToLoad.length === 0) return;
+    if (pagesToLoad.length === 0) {
+      return;
+    }
 
-    // Mark chunks as loading
-    setLoadingChunks(prev => {
-      const newSet = new Set(prev);
-      chunksToLoad.forEach(chunk => newSet.add(chunk));
-      return newSet;
-    });
+    setVersesLoading(true);
+    setVersesError(null);
 
     try {
-      // Load chunks in parallel for better performance
-      const chunkPromises = chunksToLoad.map(async (chunk) => {
-        const start = chunk * chunkSize + 1; // API uses 1-based indexing
-        const end = Math.min((chunk + 1) * chunkSize, totalVerses);
-        
-        try {
-          const result = await fetchVersesBatch(
-            surahNumber,
-            start,
-            end,
-            includeTranslations,
-            includeTransliterations
-          );
-          
-          return { 
-            chunk, 
-            verses: result.verses, 
-            start: start - 1, // Convert back to 0-based for array indexing
-            success: true 
-          };
-        } catch (error) {
-          console.error(`Failed to load chunk ${chunk} (verses ${start}-${end}):`, error);
-          return { 
-            chunk, 
-            verses: [], 
-            start: start - 1, 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Unknown error'
-          };
+      await Promise.all(pagesToLoad.map(async (page) => {
+        const startVerse = page * PAGE_SIZE + 1;
+        const endVerse = Math.min((page + 1) * PAGE_SIZE, currentTotalVersesCount);
+
+        if (startVerse > currentTotalVersesCount) {
+          setHasMore(false);
+          return;
         }
-      });
 
-      const results = await Promise.all(chunkPromises);
-      
-      // Update verses array with loaded data
-      setVerses(prevVerses => {
-        const newVerses = [...prevVerses];
-        
-        results.forEach(({ verses: chunkVerses, start, success }) => {
-          if (success) {
-            chunkVerses.forEach((verse, index) => {
-              newVerses[start + index] = verse;
-            });
-          }
+        const response = await fetchVersesBatch(
+          surahNumber,
+          startVerse,
+          endVerse,
+          true, // includeTranslations
+          true  // includeTransliterations
+        );
+
+        setVerses((prevVerses) => {
+          const newVerses = [...prevVerses];
+          console.log(`📚 Loading verses for surah ${surahNumber}, page ${page}:`, response.verses.length, 'verses');
+          response.verses.forEach((verse) => {
+            const index = verse.numberInSurah - 1;
+            newVerses[index] = verse;
+            console.log(`📖 Setting verse at index ${index}:`, `${verse.surahId}:${verse.numberInSurah}`);
+          });
+          console.log(`📊 Updated verses array - length: ${newVerses.length}, actual items:`, newVerses.filter(v => v).length);
+          return newVerses;
         });
-        
-        return newVerses;
-      });
 
-      // Check if any chunks failed
-      const failedChunks = results.filter(r => !r.success);
-      if (failedChunks.length > 0) {
-        console.warn(`${failedChunks.length} chunks failed to load`);
-        // Don't set error for partial failures, just log them
-      }
-
-    } catch (error) {
-      console.error('Error loading verse chunks:', error);
-      setError('Failed to load verses. Please try again.');
+        loadedPages.current.add(page);
+        if (response.pagination.end >= currentTotalVersesCount) {
+          setHasMore(false);
+        }
+      }));
+    } catch (err) {
+      console.error('Error fetching verses batch:', err);
+      setVersesError(err instanceof Error ? err.message : 'Failed to load verses batch');
+      setHasMore(false);
     } finally {
-      // Mark chunks as no longer loading
-      setLoadingChunks(prev => {
-        const newSet = new Set(prev);
-        chunksToLoad.forEach(chunk => newSet.delete(chunk));
-        return newSet;
-      });
+      setVersesLoading(false);
     }
-  }, [surahNumber, totalVerses, chunkSize, includeTranslations, includeTransliterations, loadingChunks, isItemLoaded]);
+  }, [surahNumber, versesLoading, hasMore]);
 
-  // Retry function
-  const retry = useCallback(() => {
-    setError(null);
-    setLoadingChunks(new Set());
-    if (totalVerses > 0) {
-      // Reload first chunk
-      loadMoreItems(0, Math.min(chunkSize - 1, totalVerses - 1));
+  // Initial load for the first page when surah is selected
+  useEffect(() => {
+    if (surahNumber !== null && verses.length === 0 && hasMore && !versesLoading) {
+      loadMoreItems(0, PAGE_SIZE - 1);
     }
-  }, [loadMoreItems, chunkSize, totalVerses]);
+  }, [surahNumber, verses.length, hasMore, versesLoading, loadMoreItems]);
 
   return {
     verses,
-    totalVerses,
-    loading,
-    error,
-    loadMoreItems,
+    versesLoading,
+    versesError,
+    hasMore,
     isItemLoaded,
-    retry
+    loadMoreItems,
+    itemCount: hasMore ? totalVersesCount + 1 : totalVersesCount, // Add 1 for loading indicator
   };
-}
-
-export default useVirtualizedVerses;
+};

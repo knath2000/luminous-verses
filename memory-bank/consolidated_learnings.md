@@ -299,3 +299,35 @@ function getCachedData<T>(key: string): T | null {
 - Integrate titles and navigation elements directly into scrollable content areas
 - Use conditional rendering for navigation elements (show only when needed)
 - *Rationale:* Clean interfaces improve focus on primary content and create more spacious, modern user experiences
+
+## Virtualized List & Performance
+
+### Pattern: Robust State Reset for Virtualized Lists
+- **Problem**: `react-window` `VariableSizeList` with `InfiniteLoader` can suffer layout collapse when data source changes, even with `key` prop on the list. This is due to `InfiniteLoader`'s internal cache and race conditions during initial render.
+- **Solution**: Apply `key` prop to a *wrapper* component (e.g., `React.Fragment` or `div`) that encloses *both* the `InfiniteLoader` and the `VariableSizeList`. This forces a complete unmount and remount of both, ensuring all internal state and caches are reset.
+- **Further Problem**: Even with the wrapper `key`, a race condition can occur if the list renders before its initial data is available, leading to layout collapse.
+- **Definitive Solution**: Implement **conditional rendering**. Only render the `InfiniteLoader` and `VariableSizeList` components *after* the initial chunk of data has been successfully loaded into state. Display a loading indicator until then. This prevents the list from ever attempting to render with an incorrect or empty data set.
+- **Hydration Mismatch**: `height={typeof window !== 'undefined' ? window.innerHeight * 0.7 : 500}` causes hydration errors.
+- **Fix**: Use `useState` for initial server-safe height (e.g., `500`) and `useEffect` to update with `window.innerHeight * 0.7` only on the client after hydration.
+- **Infinite Loop**: `Maximum update depth exceeded` due to circular dependency in `useEffect` dependencies.
+- **Fix**: Ensure `useCallback` dependencies are stable. Specifically, remove `isInitialLoading` from `loadMoreItems`'s dependency array, as `loadMoreItems` only *sets* this state, not *uses* it in a way that requires it as a dependency for its own stability.
+
+### Pattern: Dynamic Item Sizing with Debounced Reset
+- **Problem**: `react-window` needs accurate item heights for `VariableSizeList`. Dynamic content (translations, transliterations) causes height changes and layout issues.
+- **Solution**: Use `useResizeObserver` with `useLayoutEffect` for synchronous DOM measurement. This hook reports the actual height of a `VerseItem`.
+- **Optimization**: Implement a debounced `setItemSize` function in `useImprovedDynamicItemSize` that calls `listRef.current.resetAfterIndex(index)` after a short delay (e.g., 50ms). This batches rapid height changes and prevents excessive re-renders.
+- **Threshold**: Only trigger `onResize` if the size changes by a significant amount (e.g., >1px) to avoid micro-adjustments.
+- **CSS Transition**: Add `transition: height 0.2s ease;` to verse card elements for smoother visual height changes.
+
+### Pattern: Efficient Data Loading with InfiniteLoader
+- **Chunking**: Load verses in chunks (e.g., 20 verses at a time) to optimize API calls and initial load time.
+- **Parallel Loading**: Fetch multiple chunks in parallel using `Promise.all` for faster data retrieval.
+- **Loading State Tracking**: Use `useRef` for `loadingChunksRef` and `isLoadingRef` to track loading status without causing unnecessary re-renders.
+- **Preload on Mount**: Preload the first chunk of data on component mount using a `hasInitializedRef` flag to prevent multiple calls.
+- **Error Handling**: Implement robust error handling for API failures with user-friendly messages and a retry mechanism.
+
+### Pattern: Optimized Verse Item Rendering
+- **Memoization**: Use `React.memo` with `areEqual` for `VerseItem` to prevent unnecessary re-renders of individual verse cards.
+- **Prop Drilling Prevention**: Pass `settings` and `setItemSize` via `itemData` to `VerseItem` to avoid prop drilling.
+- **Sajda Indicator**: Visually indicate Sajda verses for spiritual context.
+- **Audio Unlock Hint**: Provide a clear hint for users to tap to unlock audio, adhering to browser policies.

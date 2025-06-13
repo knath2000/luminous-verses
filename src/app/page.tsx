@@ -5,6 +5,9 @@ import SurahListModal from './components/SurahListModal';
 import SettingsButton from './components/SettingsButton';
 import SettingsModal from './components/SettingsModal';
 import { VerseOfTheDay as AudioVerseOfTheDay } from './components/VerseOfTheDay';
+import { UserProfileButton } from './components/UserProfileButton';
+import { AuthModal } from './components/AuthModal';
+import { useAuth } from './contexts/AuthContext';
 
 
 
@@ -81,8 +84,7 @@ export default function Home() {
   const [titleVisible, setTitleVisible] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  
+  const { showAuthModal, setShowAuthModal } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => setTitleVisible(true), 200);
@@ -116,7 +118,12 @@ export default function Home() {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
         <header className="pt-8 pb-4 px-4">
-          <div 
+          {/* User Profile Button - Top Right */}
+          <div className="absolute top-4 right-4 z-20">
+            <UserProfileButton />
+          </div>
+          
+          <div
             className={`text-center transition-all duration-1000 transform ${
               titleVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'
             }`}
@@ -189,6 +196,11 @@ export default function Home() {
       {/* Modals */}
       <SurahListModal isOpen={isModalOpen} onClose={handleCloseModal} />
       <SettingsModal isOpen={isSettingsOpen} onClose={handleCloseSettings} />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => setShowAuthModal(false)}
+      />
     </div>
   );
 }

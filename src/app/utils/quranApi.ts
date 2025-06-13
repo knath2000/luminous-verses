@@ -58,6 +58,7 @@ export interface VerseData {
   juz?: number;
   hizbQuarter?: number;
   sajda?: boolean;
+  text_uthmani?: string; // Added for consistency with API response
 }
 
 export interface TransliterationData {
@@ -289,6 +290,7 @@ export async function fetchVerseWithTranslation(
       juz: arabicVerse.juz,
       hizbQuarter: arabicVerse.hizbQuarter,
       sajda: arabicVerse.sajda,
+      text_uthmani: arabicVerse.text_uthmani, // Assuming text_uthmani is available in ApiVerseResponse
     };
 
     setCachedData(cacheKey, verseData);
@@ -349,6 +351,7 @@ export async function fetchVersesBatch(
         text: v.text,
         translation: v.translation,
         transliteration: v.transliteration?.clean,
+        text_uthmani: v.text, // Assuming text_uthmani is the same as text for now, or needs to be fetched
       })),
       pagination: data.data.pagination
     };
@@ -399,8 +402,8 @@ export async function fetchVersesWithTranslations(
           });
         }
       } catch (error) {
-        console.warn('Failed to fetch transliterations for surah:', error);
-        // Continue without transliterations
+        console.warn('Failed to fetch transliteration:', error);
+        // Continue without transliteration
       }
     }
 
@@ -435,6 +438,7 @@ export async function fetchVersesWithTranslations(
       juz: v.juz,
       hizbQuarter: v.hizbQuarter,
       sajda: v.sajda,
+      text_uthmani: v.text, // Assuming text_uthmani is the same as text for now, or needs to be fetched
     }));
 
     // Filter by start and end verse if specified

@@ -251,3 +251,82 @@ body {
   border: 0;
 }
 
+
+/* Enhanced verse item styling for better height stability */
+.verse-item-container {
+  /* Ensure consistent box-sizing */
+  box-sizing: border-box;
+  
+  /* Prevent layout shifts during measurement */
+  contain: layout style;
+  
+  /* Smooth transitions for height changes */
+  transition: height 0.2s ease-out;
+}
+
+/* Prevent content jumping during resize */
+.verse-item-container * {
+  box-sizing: border-box;
+}
+
+/* Loading state styling */
+.verse-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  opacity: 0.6;
+}
+
+/* Smooth height transitions for settings toggles */
+@media (prefers-reduced-motion: no-preference) {
+  .verse-item-container {
+    transition: height 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .verse-item-container {
+    transition: none;
+  }
+}
+/* Enhanced verse item styling for better height stability */
+.verse-item-container {
+  /* Ensure consistent box-sizing */
+  box-sizing: border-box;
+  
+  /* Prevent layout shifts during measurement */
+  contain: layout style;
+  
+  /* Smooth transitions for height changes */
+  transition: height 0.2s ease-out;
+}
+
+/* Prevent content jumping during resize */
+.verse-item-container * {
+  box-sizing: border-box;
+}
+
+/* Loading state styling */
+.verse-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  opacity: 0.6;
+}
+
+/* Smooth height transitions for settings toggles */
+@media (prefers-reduced-motion: no-preference) {
+  .verse-item-container {
+    transition: height 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .verse-item-container {
+    transition: none;
+  }
+}
