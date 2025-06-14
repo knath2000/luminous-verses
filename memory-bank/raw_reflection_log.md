@@ -124,7 +124,7 @@ TaskRef: "Clerk Authentication Integration for Luminous Verses"
 - **Authentication Flow Incomplete**: Users cannot currently authenticate through the bookmark feature
 
 ## Technical Details
-- **Clerk Keys**: Using test environment keys (pk_test_ZGVjZW50LXJhYmJpdC04OS5jbGVyay5hY2NvdW50cy5kZXYk)
+- **Clerk Keys**: Using test environment keys (pk_test_ZGVjZW50LXJhYmJit-89.clerk.accounts.dev$)
 - **API Integration**: Backend expects JWT tokens for bookmark operations at https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks
 - **Component Architecture**: Maintained existing UI patterns while switching auth providers
 
@@ -142,3 +142,59 @@ TaskRef: "Clerk Authentication Integration for Luminous Verses"
 4. Add console.log statements to track authentication state
 5. Verify environment variables are loaded correctly
 6. Test getToken() function returns valid JWT
+---
+
+---
+Date: 2025-06-14
+TaskRef: "Integrate Quran Data API with Luminous Verses Frontend & Fix Authentication/Bookmark Issues"
+
+Learnings:
+- CORS issue in `quran-data-api`'s `api/v1/user-bookmarks.ts` was due to incorrect `setCorsHeaders` parameter order (`setCorsHeaders(req, res)` is correct).
+- Frontend `BookmarkHeart.tsx` was missing Authorization headers in API calls (needed `Authorization: Bearer ${user.id}`).
+- Frontend `BookmarkHeart.tsx` and `BookmarksModal.tsx` were trying to access `user.userId` and `user.accessToken` which are not properties of the Stack Auth `useUser()` object; only `user.id` is available.
+- Backend API response format for bookmarks was `{data: bookmarks}` but the frontend expected the `bookmarks` array directly (fixed by `data.data || data`).
+- Prisma model name `UserBookmark` was correctly mapped to `user_bookmarks` table in `prisma/schema.prisma`. The initial attempt to change `prisma.userBookmark` to `prisma.UserBookmark` in the API code was incorrect, as the generated Prisma client uses `userBookmark` (lowercase). This was a misdiagnosis.
+
+Difficulties:
+- Initial misdiagnosis of the Prisma model name case (`UserBookmark` vs `userBookmark`) in the API code, which led to a temporary TypeScript error. This highlighted the importance of verifying generated client types and trusting the Prisma client's casing.
+- Debugging the silent failure of the bookmark button required systematic checks of both frontend and backend API calls, including network requests and console logs.
+
+Successes:
+- Successfully fixed CORS issue in `quran-data-api` by correcting `setCorsHeaders` parameter order.
+- Successfully added Authorization headers to all frontend bookmark API calls in `BookmarkHeart.tsx` and `BookmarksModal.tsx`.
+- Successfully adjusted frontend to handle the API response format (`data.data || data`).
+- Successfully resolved TypeScript build errors in `luminous-verses` by correcting `user.userId` and `user.accessToken` usage to `user.id` in `BookmarksModal.tsx`.
+- Achieved full integration and flawless functionality of the authentication and bookmarking system across both `quran-data-api` and `luminous-verses` projects.
+- Both projects are now building successfully without errors.
+
+Improvements_Identified_For_Consolidation:
+- **CORS Configuration**: Ensure correct parameter order for CORS functions (`req`, `res`).
+- **Frontend API Calls**: Always include Authorization headers for authenticated endpoints.
+- **Stack Auth User Object**: Use `user.id` for user identification; avoid `user.userId` or `user.accessToken` unless explicitly defined.
+- **API Response Handling**: Anticipate and handle various API response formats (e.g., `{data: ...}` vs. direct array).
+- **Prisma Client Casing**: Trust the generated Prisma client's casing for model access (e.g., `prisma.userBookmark` not `prisma.UserBookmark`).
+- **Cross-Project Debugging**: Systematic debugging across frontend and backend is crucial for integrated systems.
+---
+
+---
+Date: 2025-06-14
+TaskRef: "Update Memory Bank for quran-data-api project"
+
+Learnings:
+- CORS issue in `api/v1/user-bookmarks.ts` was due to incorrect `setCorsHeaders` parameter order (`setCorsHeaders(req, res)` is correct).
+- Backend API response format for bookmarks was `{data: bookmarks}`.
+- Prisma model name `UserBookmark` was correctly mapped to `user_bookmarks` table in `prisma/schema.prisma`. The initial attempt to change `prisma.userBookmark` to `prisma.UserBookmark` in the API code was incorrect, as the generated Prisma client uses `userBookmark` (lowercase). This was a misdiagnosis.
+
+Difficulties:
+- Initial misdiagnosis of the Prisma model name case (`UserBookmark` vs `userBookmark`) in the API code, which led to a temporary TypeScript error. This highlighted the importance of verifying generated client types and trusting the Prisma client's casing.
+- Debugging the silent failure of the bookmark button required systematic checks of both frontend and backend API calls, including network requests and console logs.
+
+Successes:
+- Successfully fixed CORS issue in `quran-data-api` by correcting `setCorsHeaders` parameter order.
+- Achieved full integration and flawless functionality of the authentication and bookmarking system across both `quran-data-api` and `luminous-verses` projects.
+- Both projects are now building successfully without errors.
+
+Improvements_Identified_For_Consolidation:
+- **CORS Configuration**: Ensure correct parameter order for CORS functions (`req`, `res`).
+- **Prisma Client Casing**: Trust the generated Prisma client's casing for model access (e.g., `prisma.userBookmark` not `prisma.UserBookmark`).
+- **Cross-Project Debugging**: Systematic debugging across frontend and backend is crucial for integrated systems.

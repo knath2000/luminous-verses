@@ -1,5 +1,14 @@
 # Consolidated Learnings: Luminous Verses
 
+### Authentication (Stack Auth)
+- **Pattern: Stack Auth Integration**
+  - Use `@stackframe/stack` for modern, secure, and scalable authentication.
+  - Configure `StackServerApp` with `projectId` from Stack Auth dashboard.
+  - Integrate `StackAuthProvider` in the root layout (`src/app/layout.tsx`).
+  - Update components (e.g., `BookmarkHeart.tsx`, `BookmarksModal.tsx`) to use Stack Auth hooks (`useAuth`, `useUser`).
+  - Implement dedicated sign-in/sign-up routes with Stack Auth components.
+  - Store Stack Auth credentials (`NEXT_PUBLIC_STACK_PROJECT_ID`, `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`) in `.env.local` for local development and in Vercel environment variables for deployment.
+  - *Rationale:* Provides robust authentication, simplifies user management, and ensures secure API communication.
 ## Settings & Autoplay System Implementation
 
 ### Autoplay Event Handling

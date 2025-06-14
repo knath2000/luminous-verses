@@ -41,12 +41,16 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} antialiased`}
-      ><StackProvider app={stackServerApp}><StackTheme>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
-        <div id="modal-root"></div>
-      </StackTheme></StackProvider></body>
+      >
+        <StackProvider app={stackServerApp}>
+          <StackTheme>
+            <ClientProviders>
+              {children}
+              <div id="modal-root"></div>
+            </ClientProviders>
+          </StackTheme>
+        </StackProvider>
+      </body>
     </html>
   );
 }

@@ -6,8 +6,7 @@ import SettingsButton from './components/SettingsButton';
 import SettingsModal from './components/SettingsModal';
 import { VerseOfTheDay as AudioVerseOfTheDay } from './components/VerseOfTheDay';
 import { UserProfileButton } from './components/UserProfileButton';
-import { AuthModal } from './components/AuthModal';
-import { useAuth } from './contexts/AuthContext';
+
 
 
 
@@ -84,7 +83,7 @@ export default function Home() {
   const [titleVisible, setTitleVisible] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { showAuthModal, setShowAuthModal } = useAuth();
+  
 
   useEffect(() => {
     const timer = setTimeout(() => setTitleVisible(true), 200);
@@ -196,11 +195,6 @@ export default function Home() {
       {/* Modals */}
       <SurahListModal isOpen={isModalOpen} onClose={handleCloseModal} />
       <SettingsModal isOpen={isSettingsOpen} onClose={handleCloseSettings} />
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={() => setShowAuthModal(false)}
-      />
-    </div>
+      </div>
   );
 }

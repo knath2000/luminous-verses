@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@stackframe/stack'
-import { useRouter } from 'next/navigation'
+import AuthModal from './AuthModal'
 
 interface Bookmark {
   id: string
@@ -31,7 +31,6 @@ export function BookmarkHeart({
 }: BookmarkHeartProps) {
   const user = useUser()
   const isSignedIn = user !== null
-  const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -172,29 +171,12 @@ export function BookmarkHeart({
         </div>
       </button>
       
-      {/* Simple auth modal with navigation to sign-in page */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAuthModal(false)}>
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">Sign in to bookmark verses</h3>
-            <p className="text-gray-600 mb-4">Create an account to save your favorite verses and access them anytime.</p>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => router.push('/sign-in')}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={() => setShowAuthModal(false)}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Glassmorphic Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        mode="signin"
+      />
     </>
   )
 }

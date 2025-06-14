@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useUser, useStackApp } from '@stackframe/stack'
 import { BookmarksModal } from './BookmarksModal'
+import AuthModal from './AuthModal'
 
 interface UserProfileButtonProps {
   onVerseSelect?: (surahId: number, verseNumber: number) => void
@@ -11,6 +12,9 @@ export function UserProfileButton({ onVerseSelect }: UserProfileButtonProps) {
   const user = useUser()
   const [showBookmarksModal, setShowBookmarksModal] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+
+  
 
   const stackApp = useStackApp()
 
@@ -25,26 +29,35 @@ export function UserProfileButton({ onVerseSelect }: UserProfileButtonProps) {
   }
 
   const handleSignIn = () => {
-    stackApp.redirectToSignIn()
+    
+    setShowAuthModal(true);
   }
 
   if (!user) {
     return (
-      <button
-        onClick={handleSignIn}
-        className="group relative flex items-center space-x-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105"
-      >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-        <span className="text-white/80 text-sm font-medium">Sign In</span>
+      <>
+        <button
+          onClick={handleSignIn}
+          className="group relative flex items-center space-x-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105"
+        >
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <span className="text-white/80 text-sm font-medium">Sign In</span>
+          
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+            Sign in to save bookmarks
+          </div>
+        </button>
         
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-          Sign in to save bookmarks
-        </div>
-      </button>
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)}
+          mode="signin"
+        />
+      </>
     )
   }
 
@@ -127,6 +140,12 @@ export function UserProfileButton({ onVerseSelect }: UserProfileButtonProps) {
         isOpen={showBookmarksModal} 
         onClose={() => setShowBookmarksModal(false)}
         onVerseSelect={onVerseSelect}
+      />
+      
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        mode="signin"
       />
     </>
   )

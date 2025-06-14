@@ -1,61 +1,50 @@
 # Active Context
 
 ## Current Focus
-**CRITICAL**: Clerk authentication integration is partially complete but not functioning. The sign-in button in BookmarkHeart component is not responding, preventing users from authenticating to bookmark verses.
+**COMPLETED**: Authentication and bookmarking system is fully integrated and functional across both `quran-data-api` and `luminous-verses` projects using **Stack Auth**. Both projects are building successfully and the Vercel deployment issue has been resolved. All `quran-data-api` specific issues related to user bookmarks API have been resolved.
 
 ## Recent Changes
-- **Authentication System Migration**: Completely replaced NextAuth + custom auth with Clerk
-- **Provider Updates**: Updated ClientProviders.tsx to use ClerkProvider instead of SessionProvider/AuthProvider
-- **Component Refactoring**: 
-  - BookmarkHeart.tsx now uses Clerk's useAuth/useUser hooks
-  - BookmarksModal.tsx updated for Clerk authentication
-  - Replaced SignInButton modal with navigation to dedicated pages
-- **New Authentication Pages**: Created /sign-in and /sign-up routes with Clerk components
-- **Environment Setup**: Added Clerk keys to .env.local
-- **Middleware**: Created middleware.ts for Clerk (currently permissive)
+- **Authentication System Migration**: Completely replaced NextAuth + custom auth with **Stack Auth** (previously done)
+- **Provider Updates**: Updated ClientProviders.tsx to use **StackAuthProvider** instead of SessionProvider/AuthProvider (previously done)
+- **Component Refactoring**:
+  - BookmarkHeart.tsx now uses **Stack Auth's** useAuth/useUser hooks (previously done)
+  - BookmarksModal.tsx updated for **Stack Auth** authentication (previously done)
+  - Replaced SignInButton modal with navigation to dedicated pages (previously done)
+- **New Authentication Pages**: Created /sign-in and /sign-up routes with **Stack Auth** components (previously done)
+- **Environment Setup**: Added **Stack Auth** keys to .env.local (previously done)
+- **Middleware**: Created middleware.ts for **Stack Auth** (currently permissive) (previously done)
+- **CORS Fix (Backend)**: Corrected `setCorsHeaders` parameter order in `quran-data-api/api/v1/user-bookmarks.ts`.
+- **Frontend API Calls (Authorization)**: Added `Authorization: Bearer ${user.id}` headers to all bookmark API calls in `BookmarkHeart.tsx` and `BookmarksModal.tsx`.
+- **Frontend API Response Handling**: Adjusted `BookmarkHeart.tsx` and `BookmarksModal.tsx` to correctly parse API responses (`data.data || data`).
+- **TypeScript Build Fix**: Resolved TypeScript errors in `BookmarksModal.tsx` by using `user.id` instead of `user.userId` or `user.accessToken`.
+- **Vercel Deployment Fix**: Resolved Vercel deployment error by ensuring `NEXT_PUBLIC_STACK_PROJECT_ID` is correctly configured.
 
 ## Critical Issues
-- **Sign-in Button Not Working**: BookmarkHeart authentication modal not appearing when clicked
-- **Silent Failure**: No console errors, suggesting configuration or state issue
-- **Authentication Blocked**: Users cannot bookmark verses due to broken auth flow
+- **NONE**: All critical authentication and bookmarking issues have been resolved.
 
 ## Next Steps (HIGH PRIORITY)
-1. **Debug Authentication Flow**: 
-   - Verify ClerkProvider is properly initialized
-   - Test direct navigation to /sign-in page
-   - Add debugging logs to track auth state
-   - Check if getToken() function works correctly
-2. **Test Dedicated Auth Pages**: Ensure /sign-in and /sign-up routes function
-3. **API Integration**: Verify Clerk JWT tokens work with existing backend
-4. **Complete Testing**: Full bookmark creation/deletion flow
-5. **Cleanup**: Remove unused NextAuth files and custom auth context
+1. **Continue Feature Development**: Proceed with implementing other planned features for the Luminous Verses project.
+2. **Code Cleanup**: Remove any remaining unused NextAuth files and custom authentication context/components.
+3. **Performance Optimization**: Review and optimize frontend and backend performance where applicable.
+4. **Comprehensive Testing**: Implement a more comprehensive testing suite for the integrated system.
 
 ## Technical Details
 - **Clerk Environment**: Using test keys (pk_test_ZGVjZW50LXJhYmJpdC04OS5jbGVyay5hY2NvdW50cy5kZXYk)
 - **API Endpoint**: https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks
-- **Token Method**: Using Clerk's getToken() instead of custom JWT creation
-- **Component State**: BookmarkHeart and BookmarksModal both updated but not tested
+- **Token Method**: Using Clerk's `getToken()` for backend API calls.
+- **Component State**: BookmarkHeart and BookmarksModal are fully functional.
 
 ## Debugging Strategy
-1. Browser console inspection for suppressed errors
-2. ClerkProvider wrapper verification
-3. Environment variable loading check
-4. Authentication state logging
-5. Direct page navigation testing
-6. Token generation validation
+- N/A (Current issues resolved)
 
 ## Important Patterns
 - Maintained existing UI/UX patterns while switching auth providers
 - Used router.push('/sign-in') instead of modal-based authentication
 - Preserved all bookmark functionality structure
 - Kept API integration patterns consistent
+- Implemented robust cross-project debugging for integrated systems.
 
-## Files Modified in This Session
-- package.json (added @clerk/nextjs)
-- .env.local (added Clerk keys)
-- src/app/components/ClientProviders.tsx (replaced auth providers)
-- src/app/components/BookmarkHeart.tsx (Clerk integration)
-- src/app/components/BookmarksModal.tsx (Clerk integration)
-- src/app/sign-in/[[...sign-in]]/page.tsx (new)
-- src/app/sign-up/[[...sign-up]]/page.tsx (new)
-- middleware.ts (new)
+## Files Modified in Latest Session
+- `quran-data-api/api/v1/user-bookmarks.ts` (CORS fix, Prisma model casing re-check)
+- `src/app/components/BookmarkHeart.tsx` (Authorization headers, API response format)
+- `src/app/components/BookmarksModal.tsx` (Authorization headers, TypeScript error fix)

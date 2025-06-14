@@ -35,6 +35,23 @@
 - More complex caching behavior to understand
 - Newer pattern with evolving best practices
 
+### Authentication: Stack Auth
+**Why Chosen:**
+- Modern, secure, and scalable authentication solution
+- Easy integration with Next.js App Router
+- Supports various authentication methods (email/password, OAuth)
+- Provides robust user management features
+
+**Implementation Pattern:**
+```typescript
+// Stack Auth Integration
+src/stack.tsx                 // Stack Auth server-side configuration
+src/app/layout.tsx            // Stack Auth Provider integration
+src/app/handler/[...stack]/page.tsx // Stack Auth API routes
+src/app/components/AuthModal.tsx // Stack Auth UI components
+src/app/contexts/AuthContext.tsx // (Removed/Replaced)
+```
+
 ### State Management: React Context + Custom Hooks
 **Why Chosen:**
 - Lighter weight than Redux for application scope
@@ -48,6 +65,7 @@
 AudioContext → Audio playback management
 SettingsContext → User preferences
 UserGestureContext → Browser audio unlock tracking
+StackAuthContext → User authentication state (handled by Stack Auth SDK)
 
 // Custom hooks for business logic
 useAudio → Audio controls and state
