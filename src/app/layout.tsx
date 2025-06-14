@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackServerApp } from "../stack";
 import { Geist, Geist_Mono, Amiri } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "./components/ClientProviders";
@@ -39,12 +41,12 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} antialiased`}
-      >
+      ><StackProvider app={stackServerApp}><StackTheme>
         <ClientProviders>
           {children}
         </ClientProviders>
         <div id="modal-root"></div>
-      </body>
+      </StackTheme></StackProvider></body>
     </html>
   );
 }

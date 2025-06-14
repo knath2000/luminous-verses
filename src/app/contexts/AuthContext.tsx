@@ -1,6 +1,5 @@
 'use client'
-import { createContext, useContext, ReactNode, useState } from 'react'
-import { useSession, signOut } from 'next-auth/react'
+import { createContext, useContext, ReactNode } from 'react'
 
 interface User {
   id?: string
@@ -10,6 +9,7 @@ interface User {
   userType?: string
 }
 
+// Keep the same interface for compatibility
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: false,
   isGuest: false,
-  isRegistered: false,
+  isRegistered: true, // Stack Auth users are always registered
   backendToken: undefined,
   showAuthModal: false,
   setShowAuthModal: () => {},
@@ -37,35 +37,20 @@ const AuthContext = createContext<AuthContextType>({
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: session, status } = useSession()
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  
-  const user = session?.user || null
-  const isAuthenticated = !!session?.user
-  const isGuest = (user as User)?.userType === 'guest'
-  const isRegistered = (user as User)?.userType === 'registered'
-  const backendToken = (session as { backendToken?: string })?.backendToken
-
-  const handleSignIn = () => {
-    setShowAuthModal(true)
-  }
-
-  const handleSignOut = () => {
-    signOut({ callbackUrl: '/' })
-  }
-  
+  // This is just a wrapper now since Stack Auth is handled at the layout level
+  // We'll use useUser hook directly in components that need auth
   return (
     <AuthContext.Provider value={{
-      user,
-      isAuthenticated,
-      isLoading: status === 'loading',
-      isGuest,
-      isRegistered,
-      backendToken,
-      showAuthModal,
-      setShowAuthModal,
-      signIn: handleSignIn,
-      signOut: handleSignOut,
+      user: null, // Will be handled by useUser hook directly
+      isAuthenticated: false, // Will be handled by useUser hook directly
+      isLoading: false,
+      isGuest: false,
+      isRegistered: true,
+      backendToken: undefined,
+      showAuthModal: false,
+      setShowAuthModal: () => {},
+      signIn: () => {},
+      signOut: () => {},
     }}>
       {children}
     </AuthContext.Provider>

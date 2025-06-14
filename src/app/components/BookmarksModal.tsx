@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/app/contexts/AuthContext'
-import { AuthModal } from './AuthModal'
+import { useUser } from '@stackframe/stack'
+import { useRouter } from 'next/navigation'
 
 interface Bookmark {
   id: string
@@ -20,73 +20,82 @@ interface BookmarksModalProps {
 }
 
 export function BookmarksModal({ isOpen, onClose, onVerseSelect }: BookmarksModalProps) {
-  const { isAuthenticated, user } = useAuth()
+  const user = useUser()
+  const isSignedIn = user !== null
+  const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchBookmarks = useCallback(async () => {
-    if (!user?.id) return
+  if (!user?.id) return
 
-    setIsLoading(true)
-    setError(null)
-    try {
-      const token = btoa(JSON.stringify({ sub: user.id, name: user.name }))
-      
-      const response = await fetch('https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setBookmarks(data.sort((a: Bookmark, b: Bookmark) => 
-          new Date(b.createdat).getTime() - new Date(a.createdat).getTime()
-        ))
-      } else {
-        setError('Failed to load bookmarks')
+  setIsLoading(true)
+  setError(null)
+  try {
+    // For Stack Auth, we might need to use the session or a different method
+    // Try getting the token from the user session
+    const token = user.id
+
+    const response = await fetch('https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       }
-    } catch (error) {
-      console.error('Error fetching bookmarks:', error)
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      setBookmarks(data.data || data)
+    } else {
+      console.error('Fetch bookmarks failed:', response.status, response.statusText)
       setError('Failed to load bookmarks')
-    } finally {
-      setIsLoading(false)
     }
-  }, [user])
+  } catch (error) {
+    console.error('Error fetching bookmarks:', error)
+    setError('Failed to load bookmarks')
+  } finally {
+    setIsLoading(false)
+  }
+}, [user])
+
+
 
   useEffect(() => {
-    if (isOpen && isAuthenticated && user) {
+    if (isOpen && isSignedIn && user) {
       fetchBookmarks()
-    } else if (isOpen && !isAuthenticated) {
+    } else if (isOpen && !isSignedIn) {
       setShowAuthModal(true)
       onClose()
     }
-  }, [isOpen, isAuthenticated, user, fetchBookmarks, onClose])
+  }, [isOpen, isSignedIn, user, fetchBookmarks, onClose])
 
   const deleteBookmark = async (bookmarkId: string) => {
-    if (!user?.id) return
+  if (!user?.id) return
 
-    try {
-      const token = btoa(JSON.stringify({ sub: user.id, name: user.name }))
-      
-      const response = await fetch(`https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks?id=${bookmarkId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      if (response.ok) {
-        setBookmarks(prev => prev.filter(b => b.id !== bookmarkId))
+  try {
+    // Use the same token approach
+    const token = user.id
+    
+    const response = await fetch(`https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks?id=${bookmarkId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       }
-    } catch (error) {
-      console.error('Error deleting bookmark:', error)
+    })
+    
+    if (response.ok) {
+      setBookmarks(prev => prev.filter(b => b.id !== bookmarkId))
+    } else {
+      console.error('Delete bookmark failed:', response.status, response.statusText)
     }
+  } catch (error) {
+    console.error('Error deleting bookmark:', error)
   }
+}
+
 
   const handleVerseClick = (surahId: number, verseNumber: number) => {
     onVerseSelect?.(surahId, verseNumber)
@@ -222,13 +231,29 @@ export function BookmarksModal({ isOpen, onClose, onVerseSelect }: BookmarksModa
         </div>
       </div>
       
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={() => {
-          setTimeout(fetchBookmarks, 500)
-        }}
-      />
+      {/* Simple auth modal with navigation to sign-in page */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAuthModal(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Sign in to view bookmarks</h3>
+            <p className="text-gray-600 mb-4">Create an account to save and view your favorite verses.</p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => router.push('/sign-in')}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+              >
+                Sign In
+              </button>
+              <button 
+                onClick={() => setShowAuthModal(false)}
+                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

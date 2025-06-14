@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/app/contexts/AuthContext'
-import { AuthModal } from './AuthModal'
+import { useUser } from '@stackframe/stack'
+import { useRouter } from 'next/navigation'
 
 interface Bookmark {
   id: string
@@ -29,75 +29,74 @@ export function BookmarkHeart({
   translation,
   className = ""
 }: BookmarkHeartProps) {
-  const { isAuthenticated, user } = useAuth()
+  const user = useUser()
+  const isSignedIn = user !== null
+  const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [bookmarkId, setBookmarkId] = useState<string | null>(null)
 
   const checkBookmarkStatus = useCallback(async () => {
-    if (!user?.id) return
+  if (!user?.id) return
 
-    try {
-      // Create a simple JWT token for the API call
-      // In a real implementation, you'd get this from NextAuth session
-      const token = btoa(JSON.stringify({ sub: user.id, name: user.name }))
-      
-      const response = await fetch('https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      if (response.ok) {
-        const bookmarks: Bookmark[] = await response.json()
-        const existingBookmark = bookmarks.find((b: Bookmark) =>
-          b.surahid === surahId && b.versenumber === verseNumber
-        )
-        
-        if (existingBookmark) {
-          setIsBookmarked(true)
-          setBookmarkId(existingBookmark.id)
-        } else {
-          setIsBookmarked(false)
-          setBookmarkId(null)
-        }
+  try {
+    const response = await fetch('https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user.id}`,
       }
-    } catch (error) {
-      console.error('Error checking bookmark status:', error)
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      const bookmarks: Bookmark[] = data.data || data
+      const existingBookmark = bookmarks.find((b: Bookmark) =>
+        b.surahid === surahId && b.versenumber === verseNumber
+      )
+      
+      if (existingBookmark) {
+        setIsBookmarked(true)
+        setBookmarkId(existingBookmark.id)
+      } else {
+        setIsBookmarked(false)
+        setBookmarkId(null)
+      }
     }
-  }, [user, surahId, verseNumber])
+  } catch (error) {
+    console.error('Error checking bookmark status:', error)
+  }
+}, [user, surahId, verseNumber])
+
+
 
   // Check if verse is bookmarked on mount and when auth state changes
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isSignedIn && user) {
       checkBookmarkStatus()
     } else {
       setIsBookmarked(false)
       setBookmarkId(null)
     }
-  }, [isAuthenticated, user, checkBookmarkStatus])
+  }, [isSignedIn, user, checkBookmarkStatus])
 
   const handleBookmarkClick = async () => {
-    if (!isAuthenticated || !user?.id) {
+    if (!isSignedIn || !user?.id) {
       setShowAuthModal(true)
       return
     }
 
     setIsLoading(true)
     try {
-      const token = btoa(JSON.stringify({ sub: user.id, name: user.name }))
-
       if (isBookmarked && bookmarkId) {
         // Delete bookmark
         const response = await fetch(`https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks?id=${bookmarkId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }
-        })
+  method: 'DELETE',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${user.id}`,
+  }
+})
         
         if (response.ok) {
           setIsBookmarked(false)
@@ -106,19 +105,19 @@ export function BookmarkHeart({
       } else {
         // Create bookmark
         const response = await fetch('https://luminous-verses-api-tan.vercel.app/api/v1/user-bookmarks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            surahId,
-            verseNumber,
-            verseText,
-            surahName,
-            translation
-          })
-        })
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${user.id}`,
+  },
+  body: JSON.stringify({
+    surahId,
+    verseNumber,
+    verseText,
+    surahName,
+    translation
+  })
+})
         
         if (response.ok) {
           const newBookmark = await response.json()
@@ -173,14 +172,29 @@ export function BookmarkHeart({
         </div>
       </button>
       
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={() => {
-          // Refresh bookmark status after successful auth
-          setTimeout(checkBookmarkStatus, 500)
-        }}
-      />
+      {/* Simple auth modal with navigation to sign-in page */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAuthModal(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Sign in to bookmark verses</h3>
+            <p className="text-gray-600 mb-4">Create an account to save your favorite verses and access them anytime.</p>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => router.push('/sign-in')}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+              >
+                Sign In
+              </button>
+              <button 
+                onClick={() => setShowAuthModal(false)}
+                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

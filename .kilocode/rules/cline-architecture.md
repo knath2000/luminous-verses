@@ -5,7 +5,7 @@ version: 1.0
 tags: ["architecture", "development-guide", "extension", "vscode", "core-behavior"]
 globs: ["*"]
 ---
-# Cline Extension Architecture & Development Guide
+# Cline Extension Architecture & Development Guide.  
 
 ## Project Overview
 
