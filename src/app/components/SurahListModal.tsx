@@ -69,13 +69,12 @@ const useSurahs = () => {
 };
 
 
-
 // Individual Surah Item Component
 const SurahItem = ({ surah, onClick }: { surah: SurahMetadata; onClick: () => void }) => {
   return (
     <button
       onClick={onClick}
-      className="group w-full text-left glass-morphism p-4 rounded-xl hover:bg-gradient-to-r hover:from-gold/20 hover:to-purple-500/20 transition-all duration-300 transform hover:scale-[1.02] border border-white/10 hover:border-gold/40"
+      className="group w-full text-left glass-morphism p-4 rounded-xl transition-all duration-300 border border-white/10"
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
@@ -93,7 +92,7 @@ const SurahItem = ({ surah, onClick }: { surah: SurahMetadata; onClick: () => vo
           </p>
         </div>
         <svg 
-          className="w-5 h-5 text-purple-300 group-hover:translate-x-1 transition-transform duration-300" 
+          className="w-5 h-5 text-purple-300 transition-transform duration-300" 
           fill="currentColor" 
           viewBox="0 0 20 20"
         >
@@ -197,20 +196,35 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
         aria-hidden="true"
       />
       
-      {/* Modal */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        tabIndex={-1}
-        ref={modalRef}
-        onKeyDown={handleKeyDown}
-        onClick={onClose}
-        className="fixed inset-0 flex items-center justify-center p-4"
-      >
-        <div 
-          className="relative w-full max-w-4xl h-[90vh] glass-morphism-dark rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+      {/* Container for Modal and Back Button */}
+      <div className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+        {/* Back Button - positioned outside and to the left of the modal */}
+        {currentView === 'detail' && selectedSurah && (
+          <button
+            onClick={handleBackToList}
+            className="absolute top-1/2 -translate-y-1/2 left-4 z-50 w-12 h-12 rounded-full glass-morphism opacity-30 focus:opacity-100 bg-gray-500/20 focus:bg-gold/20 transition-all duration-300 shadow-lg focus:shadow-xl focus:shadow-gold/20 pointer-events-auto"
+            aria-label="Back to surah list"
+          >
+            <svg 
+              className="w-6 h-6 text-gray-400 focus:text-gold transition-all duration-300 mx-auto" 
+              fill="currentColor" 
+              viewBox="0 0 20 20"
+            >
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        )}
+
+        {/* Modal */}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          tabIndex={-1}
+          ref={modalRef}
+          onKeyDown={handleKeyDown}
           onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-4xl h-[90vh] glass-morphism-dark rounded-3xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto"
         >
           
           {/* Content */}
@@ -310,23 +324,6 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
               </div>
             )}
           </div>
-
-          {/* Floating Back Button - positioned halfway down the modal */}
-          {currentView === 'detail' && selectedSurah && (
-            <button
-              onClick={handleBackToList}
-              className="fixed left-8 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full glass-morphism opacity-30 hover:opacity-100 focus:opacity-100 bg-gray-500/20 hover:bg-gold/20 focus:bg-gold/20 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-gold/20 focus:shadow-xl focus:shadow-gold/20 group"
-              aria-label="Back to surah list"
-            >
-              <svg 
-                className="w-6 h-6 text-gray-400 group-hover:text-gold group-focus:text-gold group-hover:-translate-x-1 group-focus:-translate-x-1 transition-all duration-300 mx-auto" 
-                fill="currentColor" 
-                viewBox="0 0 20 20"
-              >
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
 
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-gold/20 to-transparent rounded-full blur-xl"></div>

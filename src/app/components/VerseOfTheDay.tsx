@@ -116,8 +116,9 @@ export function VerseOfTheDay() {
         surah={currentVerse.surah}
         verse={currentVerse.verse}
         className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 md:p-8 shadow-2xl"
-        showPlayButton={true}
-        playButtonPosition="top-right"
+        verseText={currentVerse.arabicText}
+        surahName={currentVerse.surahName}
+        translation={currentVerse.translation}
       >
         <div className="space-y-6">
           {/* Arabic Text */}
@@ -170,8 +171,9 @@ export function VerseCard({ verse, className = '' }: VerseCardProps) {
       surah={verse.surah}
       verse={verse.verse}
       className={`bg-gray-800/30 border border-gray-700/50 rounded-xl p-4 hover:bg-gray-800/50 transition-all duration-200 ${className}`}
-      showPlayButton={true}
-      playButtonPosition="top-right"
+      verseText={verse.arabicText}
+      surahName={verse.surahName}
+      translation={verse.translation}
     >
       <div className="space-y-3">
         {/* Header */}

@@ -3,7 +3,6 @@ import { areEqual } from 'react-window';
 import { ClickableVerseContainer } from './ClickableVerseContainer';
 import useResizeObserver from '../hooks/useResizeObserver';
 import VerseSkeleton from './VerseSkeleton';
-import { BookmarkHeart } from './BookmarkHeart';
 import ExpandableText from './ExpandableText';
 
 interface VerseItemProps {
@@ -63,24 +62,17 @@ const VerseItem = memo<VerseItemProps>(({ index, style, data }) => {
         <ClickableVerseContainer
           surah={verse.surahId}
           verse={verse.numberInSurah}
-          className="glass-morphism p-6 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-gold/20 transition-all duration-300 transform hover:scale-[1.005] border border-white/10 hover:border-gold/40 mb-4"
-          showPlayButton={true}
-          playButtonPosition="top-right"
+          className="glass-morphism p-6 rounded-2xl shadow-lg transition-all duration-300 border border-white/10 mb-4"
+          verseText={verse.text}
+          surahName={surahName}
+          translation={verse.translation || ''}
         >
           <div className="space-y-4">
-            {/* Verse Number and Bookmark */}
+            {/* Verse Number */}
             <div className="flex items-center justify-between mb-4">
               <span className="text-gradient-gold font-bold text-2xl">
                 {verse.surahId}:{verse.numberInSurah}
               </span>
-              <BookmarkHeart
-                surahId={verse.surahId}
-                verseNumber={verse.numberInSurah}
-                verseText={verse.text}
-                surahName={surahName}
-                translation={verse.translation || ''}
-                className="ml-2"
-              />
             </div>
 
             {/* Arabic Text */}
