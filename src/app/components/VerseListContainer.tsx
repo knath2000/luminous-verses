@@ -13,11 +13,12 @@ import { SurahMetadata } from '../utils/quranApi';
 
 interface VerseListContainerProps {
   selectedSurah: SurahMetadata;
+  onScroll?: (scrollTop: number) => void; // Add onScroll prop
 }
 
 const PAGE_SIZE = 50;
 
-const VerseListContainer = memo(function VerseListContainer({ selectedSurah }: VerseListContainerProps) { // Add display name
+const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onScroll }: VerseListContainerProps) { // Add display name and onScroll prop
   const { settings } = useSettings();
   const listRef = useRef<List>(null); // Create a ref for the List component
 
@@ -129,6 +130,11 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah }: V
                     onItemsRendered={(props) => {
                       console.log('👁️ List onItemsRendered:', props);
                       infiniteLoaderOnItemsRendered(props);
+                    }}
+                    onScroll={({ scrollOffset }) => { // Use scrollOffset instead of scrollTop
+                      if (onScroll) {
+                        onScroll(scrollOffset);
+                      }
                     }}
                     overscanCount={5}
                     className="custom-scrollbar"

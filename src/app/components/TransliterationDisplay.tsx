@@ -11,31 +11,20 @@ const TransliterationDisplay: React.FC<TransliterationDisplayProps> = ({
   transliteration,
   size = 'medium',
   showLabel = false,
-  className = ''
+  className = '',
 }) => {
-  let textSizeClass = '';
-  switch (size) {
-    case 'small':
-      textSizeClass = 'text-xs';
-      break;
-    case 'medium':
-      textSizeClass = 'text-sm';
-      break;
-    case 'large':
-      textSizeClass = 'text-base md:text-lg';
-      break;
-  }
+  const textSizeClass = {
+    small: 'text-sm',
+    medium: 'text-base',
+    large: 'text-lg',
+  }[size];
 
   return (
-    <div className={`flex flex-col items-center ${className}`}>
+    <div className={`transliteration-display ${className}`}>
       {showLabel && (
-        <p className={`text-gold/70 ${size === 'large' ? 'text-sm' : 'text-xs'} mb-1`}>
-          Transliteration:
-        </p>
+        <p className={`font-semibold mb-1 ${textSizeClass}`}>Transliteration:</p>
       )}
-      <p className={`text-gray-300 italic leading-relaxed ${textSizeClass}`}>
-        {transliteration}
-      </p>
+      <p className={`${textSizeClass}`}>{transliteration}</p>
     </div>
   );
 };

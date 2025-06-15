@@ -2,10 +2,11 @@ import React, { memo, useLayoutEffect, useCallback, useState, useEffect } from '
 import { areEqual } from 'react-window';
 import { ClickableVerseContainer } from './ClickableVerseContainer';
 import useResizeObserver from '../hooks/useResizeObserver';
-import TransliterationDisplay from './TransliterationDisplay';
+// import TransliterationDisplay from './TransliterationDisplay'; // Removed as it's no longer directly used
 import VerseSkeleton from './VerseSkeleton';
 import { BookmarkHeart } from './BookmarkHeart';
 import { getSurahName } from '../utils/quranApi';
+import ExpandableText from './ExpandableText'; // Import the new component
 
 interface VerseItemProps {
   index: number;
@@ -94,23 +95,26 @@ const VerseItem = memo<VerseItemProps>(({ index, style, data }) => {
 
             {/* Arabic Text */}
             <div className="text-center">
-              <p
-                className="text-3xl md:text-4xl lg:text-5xl leading-relaxed font-arabic text-white"
-                style={{ fontFamily: 'var(--font-amiri)' }}
+              <ExpandableText
+                text={verse.text}
+                maxLines={3} // Limit Arabic text to 3 lines
                 dir="rtl"
-              >
-                {verse.text}
-              </p>
+                lang="ar"
+                className="text-3xl md:text-4xl lg:text-5xl leading-relaxed font-arabic text-white"
+                onHeightChange={() => setSize(index, ref.current?.offsetHeight || 0)} // Update size on toggle
+              />
             </div>
 
             {/* Transliteration */}
             {settings.showTransliteration && verse.transliteration && (
               <div className="text-center border-t border-white/10 pt-4">
-                <TransliterationDisplay
-                  transliteration={verse.transliteration}
-                  size="medium"
-                  showLabel={true}
-                  className="text-gold/80 italic"
+                <ExpandableText
+                  text={verse.transliteration}
+                  maxLines={3} // Limit transliteration to 3 lines
+                  dir="ltr"
+                  lang="en"
+                  className="text-gold/80 italic text-base md:text-lg"
+                  onHeightChange={() => setSize(index, ref.current?.offsetHeight || 0)} // Update size on toggle
                 />
               </div>
             )}
@@ -118,9 +122,14 @@ const VerseItem = memo<VerseItemProps>(({ index, style, data }) => {
             {/* Translation */}
             {settings.showTranslation && verse.translation && (
               <div className="text-center border-t border-white/10 pt-4">
-                <p className="text-gray-100 text-base md:text-lg leading-relaxed">
-                  {verse.translation}
-                </p>
+                <ExpandableText
+                  text={verse.translation}
+                  maxLines={4} // Limit translation to 4 lines
+                  dir="ltr"
+                  lang="en"
+                  className="text-gray-100 text-base md:text-lg leading-relaxed"
+                  onHeightChange={() => setSize(index, ref.current?.offsetHeight || 0)} // Update size on toggle
+                />
               </div>
             )}
           </div>

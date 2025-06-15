@@ -34,7 +34,7 @@ const SurahDetails = ({ description, onBack, onContinueReading, isHeader = false
     return iconMap[theme] || '⭐';
   };
 
-  const textMaxLength = isHeader ? 150 : 300;
+  const textMaxLines = isHeader ? 3 : 5; // Use maxLines instead of maxLength
   const textSizeClass = isHeader ? 'text-xs' : '';
   const gapClass = isHeader ? 'gap-2' : 'gap-3';
   const paddingClass = isHeader ? 'p-4 pb-2' : 'p-6';
@@ -113,7 +113,9 @@ const SurahDetails = ({ description, onBack, onContinueReading, isHeader = false
               </h3>
               <ExpandableText 
                 text={description.description}
-                maxLength={textMaxLength}
+                maxLines={textMaxLines} // Use maxLines
+                dir="ltr" // Assuming description is LTR
+                lang="en" // Assuming description is English
                 className={`text-white/90 ${textSizeClass}`}
               />
             </div>
@@ -190,7 +192,9 @@ const SurahDetails = ({ description, onBack, onContinueReading, isHeader = false
                 </h3>
                 <ExpandableText 
                   text={description.historicalContext}
-                  maxLength={textMaxLength}
+                  maxLines={textMaxLines} // Use maxLines
+                  dir="ltr" // Assuming historicalContext is LTR
+                  lang="en" // Assuming historicalContext is English
                   className={`text-white/90 ${textSizeClass}`}
                 />
               </div>

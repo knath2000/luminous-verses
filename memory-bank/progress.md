@@ -15,6 +15,7 @@
 - ✅ Audio controls and autoplay functionality
 - ✅ **Authentication System** (Stack Auth integration complete and functional, AuthModal rendering fixed)
 - ✅ **User bookmark functionality** (saving and displaying bookmarks)
+- ✅ **Dynamic header fading with seamless verse list expansion**
 
 ## What's Left to Build
 - ❌ User progress tracking
@@ -48,6 +49,11 @@
 - ✅ Both projects (luminous-verses and quran-data-api) are building successfully
 - ✅ AuthModal is now rendering correctly and functional
 
+### Dynamic Header & Verse List Status
+- ✅ Initial header overlap resolved.
+- ✅ Blank space after header fade resolved.
+- ✅ Smooth dynamic padding implemented.
+
 ## Known Issues
 - Some audio files may have loading delays
 - Scroll position restoration could be improved
@@ -73,3 +79,4 @@
 - `src/app/layout.tsx` (AuthModal modal-root placement fix)
 - `src/app/components/AuthModal.tsx` (Debugging and cleanup)
 - `src/app/components/UserProfileButton.tsx` (Debugging and cleanup)
+- `luminous-verses/src/app/components/SurahListModal.tsx` (Dynamic header and verse list expansion)

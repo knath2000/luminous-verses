@@ -1,94 +1,99 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ExpandableTextProps {
   text: string;
-  maxLength?: number;
+  maxLines: number;
+  dir: 'ltr' | 'rtl';
+  lang: string;
   className?: string;
-  expandText?: string;
-  collapseText?: string;
+  expandLabel?: string;
+  collapseLabel?: string;
+  onToggle?: (expanded: boolean) => void;
+  onHeightChange?: (newHeight: number) => void;
 }
 
-const ExpandableText = ({ 
-  text, 
-  maxLength = 200, 
+const ExpandableText: React.FC<ExpandableTextProps> = ({
+  text,
+  maxLines,
+  dir,
+  lang,
   className = '',
-  expandText = 'Read more ✨',
-  collapseText = 'Show less ⭐'
-}: ExpandableTextProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [shouldShowToggle, setShouldShowToggle] = useState(false);
+  expandLabel = 'Show more',
+  collapseLabel = 'Show less',
+  onToggle,
+  onHeightChange,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const [showButton, setShowButton] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Check if text is longer than maxLength
-    setShouldShowToggle(text.length > maxLength);
-  }, [text, maxLength]);
+  const checkOverflow = useCallback(() => {
+    if (textRef.current && contentRef.current) {
+      const currentHeight = contentRef.current.offsetHeight;
+      contentRef.current.style.webkitLineClamp = 'unset'; // Temporarily unset to get full height
+      const naturalHeight = contentRef.current.offsetHeight;
+      contentRef.current.style.webkitLineClamp = expanded ? 'unset' : String(maxLines); // Restore clamp
 
-  const displayText = isExpanded ? text : text.slice(0, maxLength);
-  const needsEllipsis = !isExpanded && text.length > maxLength;
+      setShowButton(naturalHeight > currentHeight);
+    }
+  }, [expanded, maxLines]);
+
+  useEffect(() => {
+    checkOverflow();
+    // Re-check on window resize
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [text, maxLines, checkOverflow]);
+
+  useEffect(() => {
+    if (onHeightChange && textRef.current) {
+      const observer = new ResizeObserver(() => {
+        onHeightChange(textRef.current?.offsetHeight || 0);
+      });
+      observer.observe(textRef.current);
+      return () => observer.disconnect();
+    }
+  }, [onHeightChange]);
 
   const handleToggle = () => {
-    setIsExpanded(!isExpanded);
+    setExpanded((prev) => {
+      const newState = !prev;
+      onToggle?.(newState);
+      return newState;
+    });
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div ref={textRef} className={`relative ${className}`} dir={dir} lang={lang}>
       <div
         ref={contentRef}
-        className={`
-          transition-all duration-500 ease-in-out overflow-hidden
-          ${isExpanded ? 'max-h-none' : 'max-h-32'}
-        `}
+        className="transition-all duration-300 ease-in-out"
+        style={{
+          display: '-webkit-box',
+          WebkitLineClamp: expanded ? 'unset' : String(maxLines),
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
       >
-        <p className="text-white/90 leading-relaxed">
-          {displayText}
-          {needsEllipsis && (
-            <span className="text-white/60">...</span>
-          )}
-        </p>
+        {text}
       </div>
-
-      {shouldShowToggle && (
+      {showButton && (
         <button
           onClick={handleToggle}
-          className={`
-            group mt-3 inline-flex items-center gap-2 
-            glass-morphism px-4 py-2 rounded-full
-            hover:bg-gradient-to-r hover:from-gold/20 hover:to-purple-500/20
-            transition-all duration-300 transform hover:scale-105
-            border border-white/10 hover:border-gold/40
-            focus:outline-none focus:ring-2 focus:ring-gold/50 focus:ring-offset-2 focus:ring-offset-transparent
-          `}
-          aria-expanded={isExpanded}
-          aria-label={isExpanded ? 'Collapse text' : 'Expand text'}
+          className="mt-2 text-gold hover:text-gold-bright flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-gold focus:ring-opacity-50 rounded-md"
+          aria-expanded={expanded}
         >
-          <span className="text-gold text-sm font-medium">
-            {isExpanded ? collapseText : expandText}
-          </span>
-          
-          <svg 
-            className={`
-              w-4 h-4 text-gold transition-transform duration-300
-              ${isExpanded ? 'rotate-180' : 'rotate-0'}
-              group-hover:animate-pulse
-            `} 
-            fill="currentColor" 
-            viewBox="0 0 20 20"
-          >
-            <path 
-              fillRule="evenodd" 
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" 
-              clipRule="evenodd" 
-            />
-          </svg>
+          {expanded ? collapseLabel : expandLabel}
+          {expanded ? (
+            <ChevronUp size={16} className="ml-1" />
+          ) : (
+            <ChevronDown size={16} className="ml-1" />
+          )}
         </button>
-      )}
-
-      {/* Decorative cosmic elements */}
-      {isExpanded && (
-        <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-br from-gold/40 to-purple-500/40 rounded-full blur-sm animate-pulse"></div>
       )}
     </div>
   );
