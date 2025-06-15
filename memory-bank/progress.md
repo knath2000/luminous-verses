@@ -16,6 +16,8 @@
 - ✅ **Authentication System** (Stack Auth integration complete and functional, AuthModal rendering fixed)
 - ✅ **User bookmark functionality** (saving and displaying bookmarks)
 - ✅ **Dynamic header fading with seamless verse list expansion**
+- ✅ **Centralized Surah Name Fetching** (N+1 query problem resolved)
+- ✅ **Removed console.log statements** from `VerseItem.tsx` and `VerseListContainer.tsx`
 
 ## What's Left to Build
 - ❌ User progress tracking
@@ -80,3 +82,6 @@
 - `src/app/components/AuthModal.tsx` (Debugging and cleanup)
 - `src/app/components/UserProfileButton.tsx` (Debugging and cleanup)
 - `luminous-verses/src/app/components/SurahListModal.tsx` (Dynamic header and verse list expansion)
+- `luminous-verses/src/app/hooks/useSurahNames.ts` (New hook for centralized surah name fetching)
+- `luminous-verses/src/app/components/VerseItem.tsx` (Integrated useSurahNames, removed console.log)
+- `luminous-verses/src/app/components/VerseListContainer.tsx` (Integrated useSurahNames, fixed useCallback, removed console.log)

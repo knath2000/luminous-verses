@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, memo } from 'react'; // Add memo
+import React, { useCallback, useEffect, useRef, memo } from 'react';
 import InfiniteLoader from 'react-window-infinite-loader';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List } from 'react-window';
@@ -10,17 +10,19 @@ import { useImprovedDynamicItemSize } from '../hooks/useImprovedDynamicItemSize'
 import { useSettings } from '../contexts/SettingsContext';
 import VerseSkeleton from './VerseSkeleton';
 import { SurahMetadata } from '../utils/quranApi';
+import { useSurahNames } from '../hooks/useSurahNames';
 
 interface VerseListContainerProps {
   selectedSurah: SurahMetadata;
-  onScroll?: (scrollTop: number) => void; // Add onScroll prop
+  onScroll?: (scrollTop: number) => void;
 }
 
 const PAGE_SIZE = 50;
 
-const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onScroll }: VerseListContainerProps) { // Add display name and onScroll prop
+const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onScroll }: VerseListContainerProps) {
   const { settings } = useSettings();
-  const listRef = useRef<List>(null); // Create a ref for the List component
+  const listRef = useRef<List>(null);
+  const { surahNames, fetchSurahName } = useSurahNames();
 
   const {
     verses,
@@ -41,7 +43,7 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
     getEstimatedItemSize,
   } = useImprovedDynamicItemSize({
     initialItemCount: itemCount,
-    listRef: listRef, // Pass the ref directly
+    listRef: listRef,
     estimateItemSize: useCallback((index: number) => {
       const verse = verses[index];
       if (!verse) return 150;
@@ -61,6 +63,35 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
     }, [verses, settings.showTransliteration, settings.showTranslation]),
   });
 
+  // Memoize callback functions passed to virtualized list
+  const getItemSize = useCallback((index: number) => {
+    return itemSizes.get(index) || getEstimatedItemSize(index);
+  }, [itemSizes, getEstimatedItemSize]);
+
+  const handleItemsRendered = useCallback((props: {
+    overscanStartIndex: number;
+    overscanStopIndex: number;
+    visibleStartIndex: number;
+    visibleStopIndex: number;
+  }) => {
+    loadMoreItems(props.visibleStartIndex, props.visibleStopIndex);
+  }, [loadMoreItems]);
+
+  const handleScroll = useCallback(({ scrollOffset }: { scrollOffset: number }) => {
+    if (onScroll) {
+      onScroll(scrollOffset);
+    }
+  }, [onScroll]);
+
+  // Fetch surah names for all loaded verses
+  useEffect(() => {
+    verses.forEach(verse => {
+      if (verse?.surahId && !surahNames.has(verse.surahId)) {
+        fetchSurahName(verse.surahId);
+      }
+    });
+  }, [verses, surahNames, fetchSurahName]);
+
   useEffect(() => {
     resetItemSizes();
   }, [itemCount, resetItemSizes]);
@@ -69,6 +100,7 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
     verses,
     setSize: setItemSize,
     settings,
+    surahNames,
   };
 
   if (versesError) {
@@ -95,17 +127,11 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
       </div>
     );
   }
-
-  console.log('🔍 VerseListContainer render - verses.length:', verses.length, 'itemCount:', itemCount, 'versesLoading:', versesLoading);
   
   return (
     <div className="flex-grow overflow-hidden h-full">
       <AutoSizer>
         {({ height: autoSizerHeight, width: autoSizerWidth }) => {
-          console.log('📐 AutoSizer dimensions:', { autoSizerHeight, autoSizerWidth });
-          console.log('📊 InfiniteLoader config:', { itemCount, versesLength: verses.length, threshold: PAGE_SIZE / 2 });
-          console.log('🎯 ItemData structure:', { versesCount: itemData.verses.length, hasSettings: !!itemData.settings });
-          
           return (
             <InfiniteLoader
               isItemLoaded={isItemLoaded}
@@ -114,28 +140,19 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
               threshold={PAGE_SIZE / 2}
             >
               {({ onItemsRendered: infiniteLoaderOnItemsRendered }) => {
-                console.log('🔄 InfiniteLoader render function called');
                 return (
                   <List
-                    ref={listRef} // Assign the ref here
+                    ref={listRef}
                     height={autoSizerHeight}
                     width={autoSizerWidth}
                     itemCount={itemCount}
                     itemData={itemData}
-                    itemSize={(index: number) => {
-                      const size = itemSizes.get(index) || getEstimatedItemSize(index);
-                      console.log(`📏 Item ${index} size:`, size);
-                      return size;
-                    }}
+                    itemSize={getItemSize}
                     onItemsRendered={(props) => {
-                      console.log('👁️ List onItemsRendered:', props);
                       infiniteLoaderOnItemsRendered(props);
+                      handleItemsRendered(props);
                     }}
-                    onScroll={({ scrollOffset }) => { // Use scrollOffset instead of scrollTop
-                      if (onScroll) {
-                        onScroll(scrollOffset);
-                      }
-                    }}
+                    onScroll={handleScroll}
                     overscanCount={5}
                     className="custom-scrollbar"
                   >

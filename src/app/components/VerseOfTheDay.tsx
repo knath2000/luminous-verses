@@ -42,7 +42,7 @@ export function VerseOfTheDay() {
         console.error('Error loading verse of the day:', err);
         setError('Failed to load verse of the day');
         
-        // Fallback to a default verse
+        // Fallback to a default verse with escaped apostrophe
         setCurrentVerse({
           surah: 1,
           verse: 1,

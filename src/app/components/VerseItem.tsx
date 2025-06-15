@@ -1,12 +1,10 @@
-import React, { memo, useLayoutEffect, useCallback, useState, useEffect } from 'react';
+import React, { memo, useLayoutEffect, useCallback } from 'react';
 import { areEqual } from 'react-window';
 import { ClickableVerseContainer } from './ClickableVerseContainer';
 import useResizeObserver from '../hooks/useResizeObserver';
-// import TransliterationDisplay from './TransliterationDisplay'; // Removed as it's no longer directly used
 import VerseSkeleton from './VerseSkeleton';
 import { BookmarkHeart } from './BookmarkHeart';
-import { getSurahName } from '../utils/quranApi';
-import ExpandableText from './ExpandableText'; // Import the new component
+import ExpandableText from './ExpandableText';
 
 interface VerseItemProps {
   index: number;
@@ -25,23 +23,15 @@ interface VerseItemProps {
       showTransliteration: boolean;
       showTranslation: boolean;
     };
+    surahNames: Map<number, string>; // Add surahNames to data
   };
 }
 
 const VerseItem = memo<VerseItemProps>(({ index, style, data }) => {
-  console.log(`🎭 VerseItem render - index: ${index}, style:`, style);
-  const { verses, setSize, settings } = data;
+  const { verses, setSize, settings, surahNames } = data;
   const verse = verses[index];
-  console.log(`📝 VerseItem ${index} - verse:`, verse ? `${verse.surahId}:${verse.numberInSurah}` : 'undefined');
 
-  const [surahName, setSurahName] = useState<string>('');
-
-  // Fetch surah name when verse changes
-  useEffect(() => {
-    if (verse?.surahId) {
-      getSurahName(verse.surahId).then(setSurahName);
-    }
-  }, [verse?.surahId]);
+  const surahName = surahNames.get(verse?.surahId) || `Surah ${verse?.surahId}`;
 
   const [ref, size] = useResizeObserver<HTMLDivElement>({
     onResize: useCallback((newSize: { width: number; height: number }) => {
@@ -87,7 +77,7 @@ const VerseItem = memo<VerseItemProps>(({ index, style, data }) => {
                 surahId={verse.surahId}
                 verseNumber={verse.numberInSurah}
                 verseText={verse.text}
-                surahName={surahName || `Surah ${verse.surahId}`}
+                surahName={surahName}
                 translation={verse.translation || ''}
                 className="ml-2"
               />
