@@ -105,7 +105,7 @@ const SurahItem = ({ surah, onClick }: { surah: SurahMetadata; onClick: () => vo
 };
  
 // Main Modal Component
-const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
+export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Export the component
   const { surahs, loading, error, refetch } = useSurahs();
   const modalRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
@@ -304,6 +304,4 @@ const SurahListModal = ({ isOpen, onClose }: SurahListModalProps) => {
     </div>,
     modalRoot
   );
-};
-
-export default SurahListModal;
+}

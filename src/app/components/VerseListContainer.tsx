@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, memo } from 'react'; // Add memo
 import InfiniteLoader from 'react-window-infinite-loader';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List } from 'react-window';
@@ -17,7 +17,7 @@ interface VerseListContainerProps {
 
 const PAGE_SIZE = 50;
 
-const VerseListContainer = ({ selectedSurah }: VerseListContainerProps) => {
+const VerseListContainer = memo(function VerseListContainer({ selectedSurah }: VerseListContainerProps) { // Add display name
   const { settings } = useSettings();
   const listRef = useRef<List>(null); // Create a ref for the List component
 
@@ -150,6 +150,6 @@ const VerseListContainer = ({ selectedSurah }: VerseListContainerProps) => {
       )}
     </div>
   );
-};
+});
 
 export default VerseListContainer;

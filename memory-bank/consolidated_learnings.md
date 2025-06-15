@@ -9,6 +9,14 @@
   - Implement dedicated sign-in/sign-up routes with Stack Auth components.
   - Store Stack Auth credentials (`NEXT_PUBLIC_STACK_PROJECT_ID`, `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`) in `.env.local` for local development and in Vercel environment variables for deployment.
   - *Rationale:* Provides robust authentication, simplifies user management, and ensures secure API communication.
+
+- **Pattern: AuthModal Rendering & Context**
+  - Ensure `modal-root` div for React portals is placed *inside* `StackProvider` (or equivalent context provider) in `layout.tsx` to prevent context loss for modal components using auth hooks.
+  - Use the project's designated package manager (`pnpm` for `luminous-verses`) for dependency installation, especially when dealing with monorepos or local packages.
+  - When debugging component rendering issues, employ comprehensive console logging at various lifecycle stages and hook calls to trace execution flow and state changes.
+  - For complex JSX modifications, prefer rewriting the entire component file using `write_to_file` to avoid syntax corruption from targeted `search_and_replace` operations.
+  - *Rationale:* Proper context provisioning and robust debugging are crucial for complex modal interactions and authentication flows.
+  
 ## Settings & Autoplay System Implementation
 
 ### Autoplay Event Handling

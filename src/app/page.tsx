@@ -1,13 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import SurahListModal from './components/SurahListModal';
+import dynamic from 'next/dynamic'; // Import dynamic
+
+// Lazy load modal components
+const SurahListModal = dynamic(() => 
+  import('./components/SurahListModal').then(mod => ({ default: mod.SurahListModal })), {
+  loading: () => <div className="animate-pulse bg-gray-700 rounded-lg h-96" />,
+  ssr: false // Client-side only for modals
+});
+
+const SettingsModal = dynamic(() => 
+  import('./components/SettingsModal').then(mod => ({ default: mod.SettingsModal })), {
+  loading: () => <div className="modal-skeleton" />,
+  ssr: false  
+});
+
 import SettingsButton from './components/SettingsButton';
-import SettingsModal from './components/SettingsModal';
 import { VerseOfTheDay as AudioVerseOfTheDay } from './components/VerseOfTheDay';
 import { UserProfileButton } from './components/UserProfileButton';
-
-
 
 
 // Stars component for background
@@ -193,8 +204,8 @@ export default function Home() {
       <div className="fixed inset-0 bg-gradient-to-t from-black/20 via-transparent to-purple-900/10 pointer-events-none z-0"></div>
       
       {/* Modals */}
-      <SurahListModal isOpen={isModalOpen} onClose={handleCloseModal} />
-      <SettingsModal isOpen={isSettingsOpen} onClose={handleCloseSettings} />
+      {isModalOpen && <SurahListModal isOpen={isModalOpen} onClose={handleCloseModal} />}
+      {isSettingsOpen && <SettingsModal isOpen={isSettingsOpen} onClose={handleCloseSettings} />}
       </div>
   );
 }

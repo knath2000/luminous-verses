@@ -4,8 +4,8 @@
 
 ### Core Framework
 - **Next.js 15.3.3**: React App Router architecture
-- **React 19.0.0**: Latest React with concurrent features
-- **TypeScript 5**: Full type safety throughout the application
+- **React 19.1.0**: Latest React with concurrent features
+- **TypeScript 5.x**: Full type safety throughout the application (Specifically 5.8.3 from package.json)
 - **Node.js**: Runtime environment for build and development
 
 ### Styling & Design
@@ -68,7 +68,7 @@ UserGestureContext → Browser audio unlock tracking
 StackAuthContext → User authentication state (handled by Stack Auth SDK)
 
 // Custom hooks for business logic
-useAudio → Audio controls and state
+useAudio → Audio control abstraction
 useSurahDescription → Quran metadata
 ```
 
@@ -211,8 +211,8 @@ luminous-verses/
 - **Linting**: ESLint with Next.js recommended rules
 
 ### Package Management
-- **npm**: Primary package manager
-- **Lock File**: package-lock.json for consistent installs
+- **pnpm**: Primary package manager
+- **Lock File**: pnpm-lock.yaml for consistent installs
 - **Scripts**: Standard Next.js development workflow
 
 ## External Dependencies
@@ -221,23 +221,23 @@ luminous-verses/
 ```json
 {
   "next": "15.3.3",           // React framework
-  "react": "^19.0.0",         // UI library
-  "react-dom": "^19.0.0"      // DOM bindings
+  "react": "19.1.0",         // UI library
+  "react-dom": "19.1.0"      // DOM bindings
 }
 ```
 
 ### Development Dependencies
 ```json
 {
-  "typescript": "^5",                    // Type safety
-  "@types/node": "^20",                  // Node.js types
-  "@types/react": "^19",                 // React types
-  "@types/react-dom": "^19",             // React DOM types
-  "@tailwindcss/postcss": "^4",          // Tailwind integration
-  "tailwindcss": "^4",                   // CSS framework
-  "eslint": "^9",                        // Code linting
+  "typescript": "5.8.3",                    // Type safety
+  "@types/node": "20.19.0",                  // Node.js types
+  "@types/react": "19.1.8",                 // React types
+  "@types/react-dom": "19.1.6",             // React DOM types
+  "@tailwindcss/postcss": "4.1.10",          // Tailwind integration
+  "tailwindcss": "4.1.10",                   // CSS framework
+  "eslint": "9.29.0",                        // Code linting
   "eslint-config-next": "15.3.3",       // Next.js ESLint rules
-  "@eslint/eslintrc": "^3"               // ESLint configuration
+  "@eslint/eslintrc": "3.3.1"               // ESLint configuration
 }
 ```
 
@@ -248,7 +248,8 @@ luminous-verses/
 - **Endpoints Used**:
   - `GET /get-metadata?type=surah-list` - Surah metadata
   - `GET /get-verses?surah={id}&translation=true` - Verse data
-- **Authentication**: None required (public API)
+  - `GET /user-bookmarks` - User bookmarks functionality (requires authentication)
+- **Authentication**: Required for user-bookmarks (Stack Auth JWT)
 - **Rate Limiting**: Not specified, handled gracefully
 - **Caching Strategy**: Browser-level caching + fallback data
 
@@ -304,16 +305,16 @@ fetch(api) → useSurahs() → SurahListModal → UI rendering
 ### Local Development
 ```bash
 # Start development server
-npm run dev
+pnpm run dev
 
 # Type checking
-npx tsc --noEmit
+pnpm tsc --noEmit
 
 # Linting
-npm run lint
+pnpm run lint
 
 # Production build
-npm run build
+pnpm run build
 ```
 
 ### Code Quality

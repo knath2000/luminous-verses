@@ -207,7 +207,7 @@ function VolumeSlider({ value, onChange, className = '' }: VolumeSliderProps) {
   );
 }
 
-export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose }: SettingsModalProps) { // Export the component
   const { settings, updateSettings, resetSettings } = useSettings();
   const { controls } = useAudio();
   const modalRef = useRef<HTMLDivElement>(null);

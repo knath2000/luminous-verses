@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "analyze": "ANALYZE=true next build",
+    "analyze:server": "BUNDLE_ANALYZE=server next build",
+    "analyze:browser": "BUNDLE_ANALYZE=browser next build"
   },
   "dependencies": {
     "@stackframe/stack": "^2.8.12",
@@ -20,11 +23,13 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/bundle-analyzer": "^15.3.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-window-infinite-loader": "^1.0.9",
+    "babel-plugin-react-compiler": "19.1.0-rc.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",

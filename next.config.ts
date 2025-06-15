@@ -5,6 +5,15 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['api.quran.com', 'verses.quran.com'],
   },
+  experimental: {
+    optimizePackageImports: [
+      '@stackframe/stack',
+      'react-window',
+      'react-virtualized-auto-sizer',
+      'react-window-infinite-loader'
+    ],
+    reactCompiler: true,
+  },
   async headers() {
     return [
       {

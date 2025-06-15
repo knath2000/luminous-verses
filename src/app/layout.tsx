@@ -4,21 +4,31 @@ import { stackServerApp } from "../stack";
 import { Geist, Geist_Mono, Amiri } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "./components/ClientProviders";
+import { WebVitals } from "./components/WebVitals"; // Import WebVitals component
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: 'swap', // Add font-display swap
+  preload: true,   // Preload primary font
+  fallback: ['system-ui', 'arial'], // System fallbacks
 });
 
-const geistMono = Geist_Mono({
+const geistMono = Geist_Mono({ // Changed from Geist to Geist_Mono
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: 'swap',
+  preload: false,  // Don't preload secondary fonts
+  fallback: ['monospace'],
 });
 
 const amiri = Amiri({
   variable: "--font-amiri",
   subsets: ["arabic", "latin"],
   weight: ["400", "700"],
+  display: 'swap',
+  preload: false,  // Load on demand for Arabic content
+  fallback: ['serif'], // Arabic-compatible fallback
 });
 
 export const metadata: Metadata = {
@@ -47,6 +57,7 @@ export default function RootLayout({
             <ClientProviders>
               {children}
               <div id="modal-root"></div>
+              <WebVitals /> {/* Add WebVitals component */}
             </ClientProviders>
           </StackTheme>
         </StackProvider>

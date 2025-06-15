@@ -198,3 +198,4 @@ Improvements_Identified_For_Consolidation:
 - **CORS Configuration**: Ensure correct parameter order for CORS functions (`req`, `res`).
 - **Prisma Client Casing**: Trust the generated Prisma client's casing for model access (e.g., `prisma.userBookmark` not `prisma.UserBookmark`).
 - **Cross-Project Debugging**: Systematic debugging across frontend and backend is crucial for integrated systems.
+---
