@@ -55,10 +55,10 @@ export function ClickableVerseContainer({
           'Authorization': `Bearer ${user.id}`,
         },
         body: JSON.stringify({
-          surahid: surah,
-          versenumber: verse,
-          versetext: verseText,
-          surahname: surahName,
+          surahId: surah,
+          verseNumber: verse,
+          verseText: verseText,
+          surahName: surahName,
           translation: translation,
         }),
       });
@@ -67,7 +67,8 @@ export function ClickableVerseContainer({
         console.log('Verse bookmarked successfully!');
         // Optionally show a toast notification
       } else {
-        console.error('Failed to bookmark verse:', response.status, response.statusText);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to bookmark verse:', response.status, response.statusText, errorData);
         // Optionally show an error notification
       }
     } catch (error) {

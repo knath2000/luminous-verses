@@ -1,7 +1,8 @@
 'use client';
 
 import useSurahDescription from '../hooks/useSurahDescription';
-import SurahDetails from './SurahDetails'; // Import the new SurahDetails component
+import { createPortal } from 'react-dom';
+import { useState, useEffect } from 'react';
 
 interface SurahMetadata {
   number: number;
@@ -18,8 +19,22 @@ interface SurahDescriptionHeaderProps {
   onToggle: () => void;
 }
 
-const SurahDescriptionHeader = ({ surah, isExpanded, onToggle }: SurahDescriptionHeaderProps) => {
+export function SurahDescriptionHeader({
+  surah,
+  isExpanded,
+  onToggle,
+}: SurahDescriptionHeaderProps) {
   const { data: description, loading, error } = useSurahDescription(surah.number);
+
+  // Portal root for overlay
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (isExpanded) {
+      setPortalRoot(document.body);
+    } else {
+      setPortalRoot(null);
+    }
+  }, [isExpanded]);
 
   if (loading) {
     return (
@@ -76,7 +91,7 @@ const SurahDescriptionHeader = ({ surah, isExpanded, onToggle }: SurahDescriptio
   }
 
   return (
-    <div className="glass-morphism rounded-xl mb-6 border border-white/10 overflow-hidden">
+    <div className="glass-morphism rounded-xl mb-6 border border-white/10 overflow-hidden relative">
       {/* Collapsible Header */}
       <button
         onClick={onToggle}
@@ -106,13 +121,60 @@ const SurahDescriptionHeader = ({ surah, isExpanded, onToggle }: SurahDescriptio
       </button>
 
       {/* Expandable Content */}
-      <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-        <div className="border-t border-white/10">
-          <SurahDetails description={description} isHeader={true} />
-        </div>
-      </div>
+      {isExpanded && portalRoot
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[1000] flex items-start justify-center pt-24 px-4 sm:px-0"
+              style={{ pointerEvents: 'auto' }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Surah Description"
+            >
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-desert-night/80 backdrop-blur-sm z-0" aria-hidden="true"></div>
+              {/* Overlay Panel */}
+              <div className="relative z-10 w-full max-w-2xl mx-auto glass-morphism bg-desert-night/95 rounded-xl shadow-2xl border border-gold-900/30 p-6 flex flex-col">
+                {/* Sticky Header */}
+                <div className="flex items-center justify-between mb-4 sticky top-0 bg-desert-night/95 rounded-t-xl z-20 p-2">
+                  <div>
+                    <h3 className="text-xl font-bold text-gold font-amiri mb-1">{surah.englishName}</h3>
+                    <div className="text-gold/80 text-xs font-medium">{surah.revelationType}</div>
+                  </div>
+                  <button
+                    onClick={onToggle}
+                    className="ml-4 px-3 py-1 rounded-full bg-gold/10 text-gold hover:bg-gold/20 transition-colors text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                    aria-label="Close Surah Description"
+                  >
+                    ✕
+                  </button>
+                </div>
+                {/* Description Content */}
+                <div className="prose prose-invert text-gold-100/90 text-base max-h-[60vh] overflow-y-auto">
+                  {description && typeof description === 'object' && 'description' in description
+                    ? description.description
+                    : typeof description === 'string'
+                    ? description
+                    : 'No description available.'}
+                </div>
+              </div>
+            </div>,
+            portalRoot
+          )
+        : (
+            <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden relative z-30 bg-desert-night/95 rounded-b-xl shadow-xl`}
+              aria-hidden={!isExpanded}
+            >
+              <div className="border-t border-gold-900/30 px-6 py-4 prose prose-invert text-gold-100/90 text-base">
+                {description && typeof description === 'object' && 'description' in description
+                  ? description.description
+                  : typeof description === 'string'
+                  ? description
+                  : 'No description available.'}
+              </div>
+            </div>
+          )}
     </div>
   );
-};
+}
 
 export default SurahDescriptionHeader;

@@ -15,11 +15,13 @@ import { useSurahNames } from '../hooks/useSurahNames';
 interface VerseListContainerProps {
   selectedSurah: SurahMetadata;
   onScroll?: (scrollTop: number) => void;
+  scrollToVerse?: number | null; // 1-based verse number
+  onScrolledToVerse?: () => void;
 }
 
 const PAGE_SIZE = 50;
 
-const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onScroll }: VerseListContainerProps) {
+const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onScroll, scrollToVerse, onScrolledToVerse }: VerseListContainerProps) {
   const { settings } = useSettings();
   const listRef = useRef<List>(null);
   const { surahNames, fetchSurahName } = useSurahNames();
@@ -95,6 +97,19 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
   useEffect(() => {
     resetItemSizes();
   }, [selectedSurah.number, resetItemSizes]);
+
+  // Scroll to verse when scrollToVerse changes
+  useEffect(() => {
+    if (scrollToVerse && listRef.current) {
+      // verse numbers are 1-based, list indices are 0-based
+      const index = scrollToVerse - 1;
+      listRef.current.scrollToItem(index, 'center');
+      if (onScrolledToVerse) {
+        // Delay to allow scroll animation
+        setTimeout(() => onScrolledToVerse(), 400);
+      }
+    }
+  }, [scrollToVerse, onScrolledToVerse]);
 
   const itemData = {
     verses,
