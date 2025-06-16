@@ -5,8 +5,10 @@ import { createPortal } from 'react-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAudio } from '../contexts/AudioContext';
 import { ToggleSwitch, VolumeSlider, SettingsSection } from './ui'; // Updated import
+
 import { useVolumeControl } from '../hooks/useVolumeControl'; // New hook import
 import { useModalFocus } from '../hooks/useModalFocus'; // New hook import
+import { UserProfileButton } from './UserProfileButton';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -58,7 +60,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         tabIndex={-1}
         ref={modalRef}
         onKeyDown={handleKeyDown}
-        className="fixed inset-0 flex items-center justify-center p-4"
+        className="fixed inset-0 flex items-center justify-center p-4" onClick={onClose}
       >
         <div 
           className="relative w-full max-w-md max-h-[90vh] glass-morphism-dark rounded-3xl shadow-2xl overflow-hidden"
@@ -77,15 +79,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
                 
                 {/* Close Button */}
-                <button
-                  onClick={onClose}
-                  className="group p-2 rounded-full glass-morphism hover:bg-red-500/20 transition-all duration-300"
-                  aria-label="Close settings modal"
-                >
-                  <svg className="w-6 h-6 text-white group-hover:text-red-300" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
+                
               </div>
             </div>
           </div>
@@ -169,6 +163,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   ))}
                 </div>
               </div>
+{/* User Settings Section */}
+            <SettingsSection title="User Settings" icon="👤">
+              <UserProfileButton />
+            </SettingsSection>
             </SettingsSection>
           </div>
 

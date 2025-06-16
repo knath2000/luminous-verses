@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 
@@ -107,10 +107,7 @@ const SurahItem = ({ surah, onClick }: { surah: SurahMetadata; onClick: () => vo
 export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Export the component
   const { surahs, loading, error, refetch } = useSurahs();
   const modalRef = useRef<HTMLDivElement>(null);
-  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLDivElement>(null); // Ref for the header to measure its height
-  const [headerOpacity, setHeaderOpacity] = useState(1); // State for header opacity
-  const [headerHeight, setHeaderHeight] = useState(0); // State for header height
 
   // Modal navigation state
   const [currentView, setCurrentView] = useState<ModalView>('list');
@@ -118,38 +115,6 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
 
   // Modal open/close logic
-  useEffect(() => {
-    if (isOpen) {
-      previouslyFocusedElement.current = document.activeElement as HTMLElement;
-      modalRef.current?.focus();
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-      previouslyFocusedElement.current?.focus();
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  // Measure header height on mount and when view changes
-  useEffect(() => {
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight);
-    }
-  }, [currentView, selectedSurah]);
-
-  // Handle scroll for header fade effect and dynamic padding
-  const handleScroll = useCallback((scrollTop: number) => {
-    const fadeDistance = 100; // Adjust this value to control fade speed
-    const newOpacity = Math.max(0, 1 - scrollTop / fadeDistance);
-    setHeaderOpacity(newOpacity);
-  }, []);
-
-  useEffect(() => {
-    // Reset opacity when modal opens or view changes
-    setHeaderOpacity(1);
-  }, [currentView, selectedSurah]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -183,9 +148,6 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
 
   const modalRoot = document.getElementById('modal-root');
   if (!modalRoot) return null;
-
-  // Calculate dynamic padding top based on header opacity
-  const dynamicPaddingTop = headerHeight * headerOpacity;
 
   return createPortal(
     <div className="fixed inset-0 z-50">
@@ -282,8 +244,7 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
                 {/* Fixed Header Section */}
                 <div 
                   ref={headerRef} // Assign ref to header
-                  className="absolute top-0 left-0 w-full p-6 pb-4 border-b border-white/10 z-20 bg-desert-night/90 backdrop-blur-sm transition-opacity duration-200"
-                  style={{ opacity: headerOpacity }}
+                  className="sticky top-0 left-0 w-full p-6 pb-4 border-b border-white/10 z-20 bg-desert-night/90 backdrop-blur-sm"
                 >
                   <div className="text-center mb-4">
                     <h2 className="text-2xl md:text-3xl font-bold text-gradient-gold mb-2">
@@ -313,13 +274,11 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
                     onToggle={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                   />
                 </div>
-
                 {/* Scrollable Verse List Container */}
                 <div 
                   className="flex-grow overflow-y-auto relative"
-                  style={{ paddingTop: `${dynamicPaddingTop}px` }} // Apply dynamic padding
                 >
-                  <VerseListContainer selectedSurah={selectedSurah} onScroll={handleScroll} />
+                  <VerseListContainer selectedSurah={selectedSurah} />
                 </div>
               </div>
             )}

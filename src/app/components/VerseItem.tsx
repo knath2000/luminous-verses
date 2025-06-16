@@ -34,8 +34,7 @@ const VerseItem = memo<VerseItemProps>(({ index, style, data }) => {
 
   const [ref, size] = useResizeObserver<HTMLDivElement>({
     onResize: useCallback((newSize: { width: number; height: number }) => {
-      const adjustedHeight = Math.max(newSize.height + 24, 100);
-      setSize(index, adjustedHeight);
+      setSize(index, newSize.height);
     }, [index, setSize]),
     debounceMs: 16,
     threshold: 5
@@ -43,8 +42,7 @@ const VerseItem = memo<VerseItemProps>(({ index, style, data }) => {
 
   useLayoutEffect(() => {
     if (ref.current && size.height > 0) {
-      const adjustedHeight = Math.max(size.height + 24, 100);
-      setSize(index, adjustedHeight);
+      setSize(index, size.height);
     }
   }, [settings.showTransliteration, settings.showTranslation, index, setSize, size.height, ref]);
 

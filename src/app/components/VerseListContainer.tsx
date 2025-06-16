@@ -94,7 +94,7 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
 
   useEffect(() => {
     resetItemSizes();
-  }, [itemCount, resetItemSizes]);
+  }, [selectedSurah.number, resetItemSizes]);
 
   const itemData = {
     verses,

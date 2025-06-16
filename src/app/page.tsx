@@ -10,15 +10,10 @@ const SurahListModal = dynamic(() =>
   ssr: false // Client-side only for modals
 });
 
-const SettingsModal = dynamic(() => 
-  import('./components/SettingsModal').then(mod => ({ default: mod.SettingsModal })), {
-  loading: () => <div className="modal-skeleton" />,
-  ssr: false  
-});
 
-import SettingsButton from './components/SettingsButton';
 import { VerseOfTheDay as AudioVerseOfTheDay } from './components/VerseOfTheDay';
-import { UserProfileButton } from './components/UserProfileButton';
+import SettingsButton from './components/SettingsButton';
+import { SettingsModal } from './components/SettingsModal';
 
 
 // Stars component for background
@@ -92,30 +87,29 @@ const FloatingOrbs = () => {
 // Main Home Component
 export default function Home() {
   const [titleVisible, setTitleVisible] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSurahModalOpen, setIsSurahModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   
-
   useEffect(() => {
     const timer = setTimeout(() => setTitleVisible(true), 200);
     return () => clearTimeout(timer);
   }, []);
 
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
+  const handleOpenSurahModal = () => {
+    setIsSurahModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseSurahModal = () => {
+    setIsSurahModalOpen(false);
   };
 
-  const handleOpenSettings = () => {
-    setIsSettingsOpen(true);
+  const handleOpenSettingsModal = () => {
+    setIsSettingsModalOpen(true);
   };
 
-  const handleCloseSettings = () => {
-    setIsSettingsOpen(false);
+  const handleCloseSettingsModal = () => {
+    setIsSettingsModalOpen(false);
   };
 
   return (
@@ -128,10 +122,6 @@ export default function Home() {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
         <header className="pt-8 pb-4 px-4">
-          {/* User Profile Button - Top Right */}
-          <div className="absolute top-4 right-4 z-20">
-            <UserProfileButton />
-          </div>
           
           <div
             className={`text-center transition-all duration-1000 transform ${
@@ -168,11 +158,11 @@ export default function Home() {
             <div className="text-center mt-8 animate-fadeInUp">
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 {/* Settings Button */}
-                <SettingsButton onClick={handleOpenSettings} />
+                <SettingsButton onClick={handleOpenSettingsModal} />
                 
                 {/* Open Quran Button */}
                 <button
-                  onClick={handleOpenModal}
+                  onClick={handleOpenSurahModal}
                   className="group relative glass-morphism px-8 py-4 rounded-2xl hover:animate-glow transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-opacity-50"
                   aria-label="Open Quran to explore chapters and verses"
                 >
@@ -204,8 +194,8 @@ export default function Home() {
       <div className="fixed inset-0 bg-gradient-to-t from-black/20 via-transparent to-purple-900/10 pointer-events-none z-0"></div>
       
       {/* Modals */}
-      {isModalOpen && <SurahListModal isOpen={isModalOpen} onClose={handleCloseModal} />}
-      {isSettingsOpen && <SettingsModal isOpen={isSettingsOpen} onClose={handleCloseSettings} />}
+      {isSurahModalOpen && <SurahListModal isOpen={isSurahModalOpen} onClose={handleCloseSurahModal} />}
+      {isSettingsModalOpen && <SettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} />}
       </div>
   );
 }
