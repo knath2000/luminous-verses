@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 import SurahDescriptionHeader from './SurahDescriptionHeader';
 import {
@@ -33,6 +34,9 @@ const HEADER_MAX_HEIGHT = 160; // px, adjust as needed for your header
 
 // Modal view type
 type ModalView = 'list' | 'detail';
+
+// Query-string key we'll use to encode the modal view in the URL
+const VIEW_QUERY_PARAM = 'view';
 
 interface SurahListModalProps {
   isOpen: boolean;
@@ -145,6 +149,46 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
     persistWithLastActiveView,
   } = useScrollPreservation();
 
+  // Query-string key we'll use to encode the modal view in the URL
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // Utility to push/replace URL with the desired view param (shallow, no scroll)
+  const updateUrlViewParam = useCallback(
+    (view: ModalView, replace = false) => {
+      const params = new URLSearchParams(searchParams?.toString() ?? '');
+      if (view === 'list') {
+        params.delete(VIEW_QUERY_PARAM);
+      } else {
+        params.set(VIEW_QUERY_PARAM, 'detail');
+      }
+      const url = `${pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+      if (replace) {
+        router.replace(url, { scroll: false });
+      } else {
+        router.push(url, { scroll: false });
+      }
+    },
+    [pathname, router, searchParams]
+  );
+
+  /* ────────────────────────────────────────────────
+     Listen for browser back/forward (popstate) and
+     synchronise sessionStorage so restoration effect
+     stays consistent with the URL.
+  ──────────────────────────────────────────────── */
+  useEffect(() => {
+    const handler = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get(VIEW_QUERY_PARAM) !== 'detail') {
+        sessionStorage.setItem('lv_lastActiveView', 'list');
+      }
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
+
   // Handler for verse list scroll
   const handleVerseListScroll = useCallback((scrollTop: number, visibleIndex?: number) => {
     // Fade out header as user scrolls down (0px = fully visible, >=100px = fully faded)
@@ -193,6 +237,7 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
   const handleSurahClick = (surah: SurahMetadata) => {
     setSelectedSurah(surah);
     setCurrentView('detail');
+    updateUrlViewParam('detail');
     setIsDescriptionExpanded(false); // Start with description collapsed
   };
 
@@ -200,8 +245,9 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
     // Note: verse scroll position is already saved via real-time tracking
     setCurrentView('list');
     setSelectedSurah(null);
+    updateUrlViewParam('list');
     setRestorationState('pending'); // Prepare to restore surah list
-  }, []);
+  }, [updateUrlViewParam]);
 
   // Filter surahs by search query (English, Arabic, transliterated, number)
   const filteredSurahs = surahs.filter((surah) => {
@@ -235,10 +281,12 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
   useEffect(() => {
     if (restorationState !== 'pending' || !isOpen || loading || surahs.length === 0) return;
 
-    console.log('🔄 Restoration logic - currentView:', currentView, 'lastActiveView:', scrollState.lastActiveView, 'selectedSurahNumber:', scrollState.selectedSurahNumber);
+    const urlView = searchParams?.get(VIEW_QUERY_PARAM);
 
-    // A. Restore Surah List (when not coming from detail view)
-    if (currentView === 'list' && scrollState.lastActiveView !== 'detail') {
+    console.log('🔄 Restoration logic - currentView:', currentView, 'lastActiveView:', scrollState.lastActiveView, 'selectedSurahNumber:', scrollState.selectedSurahNumber, 'urlView:', urlView);
+
+    // A. Restore Surah List (URL says list or lastActiveView not detail)
+    if (currentView === 'list' && (urlView !== 'detail' || scrollState.lastActiveView !== 'detail')) {
       console.log('🔄 Restoring surah list view');
       setRestorationState('restoring');
       restoreSurahListPosition().then(() => {
@@ -246,8 +294,8 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
       });
     }
 
-    // B. Restore Verse Detail view (if it was the last active view)
-    else if (currentView === 'list' && scrollState.lastActiveView === 'detail' && scrollState.selectedSurahNumber) {
+    // B. Restore Verse Detail view only if URL also wants detail
+    else if (currentView === 'list' && urlView === 'detail' && scrollState.lastActiveView === 'detail' && scrollState.selectedSurahNumber) {
       const lastSurah = surahs.find(s => s.number === scrollState.selectedSurahNumber);
       if (lastSurah) {
         console.log('🔄 Restoring detail view for surah:', lastSurah.ename);
@@ -265,7 +313,7 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
       setRestorationState('complete');
     }
     
-  }, [restorationState, isOpen, loading, currentView, surahs, scrollState.lastActiveView, scrollState.selectedSurahNumber, restoreSurahListPosition]);
+  }, [restorationState, isOpen, loading, currentView, surahs, scrollState.lastActiveView, scrollState.selectedSurahNumber, restoreSurahListPosition, searchParams]);
 
   // 3. Specifically handle scrolling to a verse AFTER the detail view is rendered
   useEffect(() => {
@@ -277,6 +325,19 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
       });
     }
   }, [currentView, selectedSurah, restorationState, restoreVerseListPosition, scrollState.verseScrollPosition, scrollState.verseScrollIndex]);
+
+  /* ── Initial view sync from URL on open ────────────── */
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // read once on open – keeps existing restoration logic intact
+    const initialView = searchParams?.get(VIEW_QUERY_PARAM);
+    if (initialView === 'detail' && currentView === 'list') {
+      // We don't know which surah yet; restoration logic will pick the last one
+      setCurrentView('detail');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
