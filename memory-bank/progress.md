@@ -169,6 +169,7 @@
 - [x] ✅ **COMPLETED**: Magic numbers elimination (navigation constants)
 - [x] ✅ **COMPLETED**: TypeScript interface improvements (navigation types)
 - [x] ✅ **COMPLETED**: Removed explicit `any` from `VersePill.tsx` helper, restoring passing production build
+- [x] ✅ **COMPLETED**: Graceful 404 handling in `quranApi.ts` fetchVersesBatch eliminates translation tab errors
 - [ ] Error boundary implementation for robustness
 - [ ] Testing coverage expansion (unit + integration)
 - [ ] Performance monitoring and analytics integration
