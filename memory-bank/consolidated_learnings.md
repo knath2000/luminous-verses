@@ -73,3 +73,15 @@
 - **Principle:** When adding navigation features to virtualized lists within modals, pay special attention to component lifecycle, rendering conditions, and integration with existing scroll management.
 - **Rationale:** Virtualized lists have complex rendering behavior and adding navigation controls requires careful consideration of when and how components are mounted and displayed.
 - **Application:** Pagination components were properly implemented and integrated but not appearing in the UI, indicating potential issues with conditional rendering, z-index, positioning, or component lifecycle in the modal/virtualized list context.
+
+## URL-Driven Modal State Synchronization
+**Pattern:** Store modal view state in the URL query string (e.g. `?view=list|detail`) and update it with `router.push/replace` using `{ shallow: true }` whenever the view changes.
+
+**Enhancement:** Add a `popstate` (or `router.beforePopState`) listener to synchronise any persisted UI state (e.g. `sessionStorage.lastActiveView`) with the URL when the user navigates via browser Back/Forward buttons.
+
+**Rationale:**
+- Eliminates loops where stale persisted state overrides fresh URL intent.
+- Enables native history navigation without full reloads.
+- Keeps session-persisted restoration logic in lock-step with actual navigation, improving reliability of complex modals.
+
+**Application:** Implemented in `SurahListModal.tsx` – view state is encoded under `view` param and a `popstate` listener resets `lv_lastActiveView` to `list`, ensuring the Back button returns users from verse detail to the surah list instead of re-loading the detail view.

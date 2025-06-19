@@ -17,6 +17,7 @@
 - User removed pagination components from layout.tsx after they didn't work
 - **FIXED**: Replaced `any`-based `cx` helper in `VersePill.tsx` with strongly-typed `ClassValue` union to satisfy ESLint `no-explicit-any` rule and unblock production builds
 - **FIXED**: Added graceful 404 handling in `fetchVersesBatch` (quranApi.ts) so out-of-range requests return an empty payload instead of throwing, preventing Translation tab 404 errors
+- **FIXED**: Browser Back now works inside SurahListModal – view state (`list` / `detail`) is synchronised to the URL query param `?view=` with shallow routing; back-button navigates correctly between views
 - **Build blocker resolved**: ESLint `no-explicit-any` violation fixed; CI/CD green
 
 ## Next Steps
@@ -43,3 +44,5 @@
 - Issue appears to be in component visibility/rendering rather than logic implementation
 - User decided to pause work and resume tomorrow for fresh debugging approach
 - **Robust Error Handling**: Treating 404 as valid empty data prevents UI crashes during translation searches for short surahs
+- **URL-driven State**: Encoding modal view in the URL and using `router.push({ shallow:true })` provides native browser history support without full page reloads
+- **Popstate Sync**: Listening for browser `popstate` and resetting `lv_lastActiveView` to `list` keeps `sessionStorage` aligned with the URL so restoration logic doesn't re-enter the verse detail view after a Back navigation
