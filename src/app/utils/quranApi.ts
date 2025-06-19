@@ -305,7 +305,19 @@ export async function fetchVersesBatch(
       }
     );
 
+    // Treat 404 (no verses in requested range) as a valid empty response
     if (!response.ok) {
+      if (response.status === 404) {
+        return {
+          verses: [],
+          pagination: {
+            start,
+            end,
+            total: 0,
+            hasMore: false,
+          },
+        };
+      }
       throw new Error(`Failed to fetch verses batch: ${response.status}`);
     }
 
