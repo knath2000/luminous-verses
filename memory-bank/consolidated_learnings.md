@@ -17,6 +17,7 @@
 - **Principle:** Use ESLint suppression comments (`// eslint-disable-next-line`) judiciously for specific lines or blocks of code where a linting rule might flag a valid and intentional pattern (e.g., variables assigned but not immediately used in hooks designed for future extensibility).
 - **Rationale:** Prevents unnecessary warnings and allows for cleaner code without disabling rules globally, while still adhering to best practices.
 - **Application:** Applied to `isDragging` in `VolumeSlider.tsx` and to `useRef`, `handleMouseDown`, `handleTouchStart` in `useDragInteraction.ts` where the variables are part of the hook's interface but not directly consumed within the hook's immediate scope.
+
 ## Performance Optimization: Centralized Data Fetching
 - **Principle:** For frequently accessed, static or semi-static data, implement a centralized fetching and caching mechanism (e.g., a custom hook) to avoid redundant API calls (N+1 query problem).
 - **Rationale:** Reduces network overhead, improves application responsiveness, and simplifies data management across components.
@@ -31,3 +32,44 @@
 - **Principle:** React Hooks (e.g., `useState`, `useEffect`, `useCallback`, `useMemo`) must always be called in the exact same order in every component render. They cannot be called conditionally or after early returns.
 - **Rationale:** Ensures React's internal state management for hooks remains consistent and predictable.
 - **Application:** Corrected `useCallback` placements in `VerseListContainer.tsx` by moving them to the top of the component, before any conditional rendering logic.
+
+## Circular Dependency Resolution in React
+- **Principle:** When React components create circular dependencies between state and event handlers, use `useRef` instead of `useState` for values that don't need to trigger re-renders.
+- **Rationale:** Prevents infinite re-render loops and performance issues while maintaining functional behavior.
+- **Application:** Fixed `VerseListContainer` scroll regression by replacing `useState` with `useRef` for `visibleStartIndex`, breaking the circular dependency between `handleScroll` and `handleItemsRendered`.
+
+## Modal State Machine Pattern
+- **Principle:** For complex modal restoration logic with multiple competing effects, implement a single coordinated state machine instead of multiple `useEffect` hooks.
+- **Rationale:** Prevents race conditions, ensures predictable state transitions, and eliminates timing conflicts between different restoration logic paths.
+- **Application:** Replaced multiple competing `useEffect` hooks in `SurahListModal` with a single state machine that handles modal restoration based on loading state, view type, and previous user context.
+
+## Enhanced Scroll Preservation with Persistence
+- **Principle:** Implement cross-session scroll preservation using sessionStorage with debounced writes and proper TypeScript typing for timeout references.
+- **Rationale:** Provides seamless user experience across browser sessions while optimizing performance through debouncing and preventing excessive storage writes.
+- **Application:** Enhanced `useScrollPreservation` hook with sessionStorage persistence, 300ms debounced saves, proper cleanup on unmount, and `NodeJS.Timeout | null` typing for timeout references.
+
+## React State & Persistence Patterns
+**Pattern: Synchronous Persistence Helper to Avoid Race Conditions**
+- When persistent state depends on the latest React state, bypass potential React batching delays by writing a helper that directly mutates a ref (`stateRef.current`) and immediately writes to storage (e.g., `sessionStorage`).
+- Call this helper from event handlers where accurate, atomic persistence is critical (e.g., modal `onClose`).
+- *Rationale:* Ensures consistent data between in-memory state and persisted storage, eliminating race conditions where `setState` has not yet flushed.
+
+**Pattern: Default Collapsed State for Optional UI Overlays**
+- Components containing optional overlays (e.g., description panels) SHOULD default to the collapsed/hidden state (`false`) unless explicitly opened by the user.
+- Restoring UI after navigation or modal reopen then faithfully reflects prior user interactions instead of forcing visibility.
+- *Application:* `SurahListModal` sets `isDescriptionExpanded` initial state to `false`, preventing automatic description popup on restoration.
+
+## Glassmorphism Design System Consistency
+- **Principle:** Maintain consistent glassmorphism styling patterns across all UI components using established Tailwind CSS classes and design tokens.
+- **Rationale:** Ensures visual coherence throughout the application and reduces design debt by following established patterns.
+- **Application:** Successfully applied glassmorphism styling (`bg-white/10 backdrop-blur-lg border border-white/15`) to `BottomNavBar` and `PaginationBar` components, maintaining consistency with existing design system.
+
+## Complex Component Integration Debugging
+- **Principle:** When implementing complex UI features that integrate multiple systems (virtualized lists, modals, navigation), systematic debugging requires checking component mounting, conditional rendering logic, and integration points.
+- **Rationale:** Complex integrations can fail at multiple points - component visibility, state management, event handling, or integration with existing systems.
+- **Application:** Pagination implementation completed successfully but navigation buttons not appearing suggests issue in component visibility/rendering rather than logic implementation. Requires investigation of mounting conditions and modal/virtualized list integration.
+
+## Virtualized List Integration Challenges
+- **Principle:** When adding navigation features to virtualized lists within modals, pay special attention to component lifecycle, rendering conditions, and integration with existing scroll management.
+- **Rationale:** Virtualized lists have complex rendering behavior and adding navigation controls requires careful consideration of when and how components are mounted and displayed.
+- **Application:** Pagination components were properly implemented and integrated but not appearing in the UI, indicating potential issues with conditional rendering, z-index, positioning, or component lifecycle in the modal/virtualized list context.

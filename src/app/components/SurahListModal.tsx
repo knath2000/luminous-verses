@@ -9,6 +9,9 @@ import {
   fetchSurahs,
   SurahMetadata
 } from '../utils/quranApi';
+import { useScrollPreservation } from '../hooks/useScrollPreservation';
+import { JumpToVerseModal } from './navigation/JumpToVerseModal';
+import { VERSE_NAVIGATION_THRESHOLD } from '../constants/navigation';
 
 // Dynamically import VerseListContainer with ssr: false
 const VerseListContainer = dynamic(() => import('./VerseListContainer'), { 
@@ -20,6 +23,10 @@ const VerseListContainer = dynamic(() => import('./VerseListContainer'), {
     </div>
   ),
 });
+
+// Import the type for the VerseListContainer handle
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { VerseListContainerHandle } from './VerseListContainer';
 
 // Add at the top of the file, after imports
 const HEADER_MAX_HEIGHT = 160; // px, adjust as needed for your header
@@ -114,7 +121,8 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
   // Modal navigation state
   const [currentView, setCurrentView] = useState<ModalView>('list');
   const [selectedSurah, setSelectedSurah] = useState<SurahMetadata | null>(null);
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(true);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [restorationState, setRestorationState] = useState<'idle' | 'pending' | 'restoring' | 'complete'>('idle');
 
   // Header fade state
   const [headerOpacity, setHeaderOpacity] = useState(1);
@@ -126,8 +134,19 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
   const [isJumpModalOpen, setIsJumpModalOpen] = useState(false);
   const [jumpTargetVerse, setJumpTargetVerse] = useState<number | null>(null);
 
+  // Initialize scroll preservation
+  const {
+    scrollState,
+    surahListScrollRef,
+    verseListRef,
+    saveVerseListPosition,
+    restoreSurahListPosition,
+    restoreVerseListPosition,
+    persistWithLastActiveView,
+  } = useScrollPreservation();
+
   // Handler for verse list scroll
-  const handleVerseListScroll = useCallback((scrollTop: number) => {
+  const handleVerseListScroll = useCallback((scrollTop: number, visibleIndex?: number) => {
     // Fade out header as user scrolls down (0px = fully visible, >=100px = fully faded)
     const fadeStart = 0;
     const fadeEnd = 100;
@@ -137,7 +156,12 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
       ? 0
       : 1 - (scrollTop - fadeStart) / (fadeEnd - fadeStart);
     setHeaderOpacity(opacity);
-  }, []);
+
+    // Save verse list scroll position if we have a selected surah
+    if (selectedSurah && visibleIndex !== undefined && restorationState !== 'restoring') {
+      saveVerseListPosition(scrollTop, visibleIndex, selectedSurah.number);
+    }
+  }, [selectedSurah, saveVerseListPosition, restorationState]);
 
   // Modal open/close logic
 
@@ -145,27 +169,39 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
     if (e.key === 'Escape') {
       if (currentView === 'detail') {
         // Go back to list view on Escape in detail view
-        setCurrentView('list');
-        setSelectedSurah(null);
+        handleBackToList();
       } else {
         // Close modal on Escape in list view
-        onClose();
+        handleModalClose();
       }
     }
   };
 
+  // Enhanced modal close handler that saves scroll position
+  const handleModalClose = useCallback(() => {
+    // Capture the current view state before any cleanup
+    const activeView = currentView;
+    
+    console.log('🚪 Modal closing - current view:', activeView);
+    
+    // Immediately persist with the correct lastActiveView (bypasses React state timing issues)
+    persistWithLastActiveView(activeView);
+    
+    onClose();
+  }, [currentView, persistWithLastActiveView, onClose]);
+
   const handleSurahClick = (surah: SurahMetadata) => {
-    console.log('Selected surah:', surah);
     setSelectedSurah(surah);
     setCurrentView('detail');
     setIsDescriptionExpanded(false); // Start with description collapsed
   };
 
-  const handleBackToList = () => {
-    console.log('Back to list clicked');
+  const handleBackToList = useCallback(() => {
+    // Note: verse scroll position is already saved via real-time tracking
     setCurrentView('list');
     setSelectedSurah(null);
-  };
+    setRestorationState('pending'); // Prepare to restore surah list
+  }, []);
 
   // Filter surahs by search query (English, Arabic, transliterated, number)
   const filteredSurahs = surahs.filter((surah) => {
@@ -184,6 +220,64 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
     setIsJumpModalOpen(false);
   };
 
+  // --- STATE MACHINE FOR SCROLL RESTORATION ---
+
+  // 1. Trigger restoration when the modal is opened or the view changes back to the list
+  useEffect(() => {
+    if (isOpen) {
+      setRestorationState('pending');
+    } else {
+      setRestorationState('idle'); // Reset when modal closes
+    }
+  }, [isOpen]);
+
+  // 2. Execute the restoration based on the current view and state
+  useEffect(() => {
+    if (restorationState !== 'pending' || !isOpen || loading || surahs.length === 0) return;
+
+    console.log('🔄 Restoration logic - currentView:', currentView, 'lastActiveView:', scrollState.lastActiveView, 'selectedSurahNumber:', scrollState.selectedSurahNumber);
+
+    // A. Restore Surah List (when not coming from detail view)
+    if (currentView === 'list' && scrollState.lastActiveView !== 'detail') {
+      console.log('🔄 Restoring surah list view');
+      setRestorationState('restoring');
+      restoreSurahListPosition().then(() => {
+        setRestorationState('complete');
+      });
+    }
+
+    // B. Restore Verse Detail view (if it was the last active view)
+    else if (currentView === 'list' && scrollState.lastActiveView === 'detail' && scrollState.selectedSurahNumber) {
+      const lastSurah = surahs.find(s => s.number === scrollState.selectedSurahNumber);
+      if (lastSurah) {
+        console.log('🔄 Restoring detail view for surah:', lastSurah.ename);
+        setRestorationState('restoring');
+        // This part just sets the view, the next effect handles the actual scroll
+        setSelectedSurah(lastSurah);
+        setCurrentView('detail');
+      } else {
+        console.log('🔄 Cannot find surah for restoration, aborting');
+        setRestorationState('idle'); // Cannot find surah, abort
+      }
+    } else {
+      // Any other pending state is considered complete for this effect
+      console.log('🔄 Restoration complete - no action needed');
+      setRestorationState('complete');
+    }
+    
+  }, [restorationState, isOpen, loading, currentView, surahs, scrollState.lastActiveView, scrollState.selectedSurahNumber, restoreSurahListPosition]);
+
+  // 3. Specifically handle scrolling to a verse AFTER the detail view is rendered
+  useEffect(() => {
+    if (currentView === 'detail' && selectedSurah && restorationState === 'restoring') {
+      console.log('🔄 Restoring verse scroll for surah:', selectedSurah.ename, 'to position:', scrollState.verseScrollPosition, 'index:', scrollState.verseScrollIndex);
+      restoreVerseListPosition(selectedSurah.number).then(() => {
+        console.log('🔄 Verse scroll restoration complete');
+        setRestorationState('complete');
+      });
+    }
+  }, [currentView, selectedSurah, restorationState, restoreVerseListPosition, scrollState.verseScrollPosition, scrollState.verseScrollIndex]);
+
   if (!isOpen) return null;
 
   const modalRoot = document.getElementById('modal-root');
@@ -194,7 +288,7 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleModalClose}
         aria-hidden="true"
       />
       
@@ -246,7 +340,10 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
           {/* Content */}
           <div className="relative z-10 flex flex-col flex-grow h-full">
             {currentView === 'list' && (
-              <div className="p-6 overflow-y-auto h-full">
+              <div 
+                ref={surahListScrollRef}
+                className="p-6 overflow-y-auto h-full"
+              >
                 {/* Title for List View */}
                 <div className="text-center mb-8">
                   <h2 id="modal-title" className="text-3xl md:text-4xl font-bold text-gradient-gold mb-2">
@@ -337,8 +434,8 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
                     onToggle={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                   />
                 </div>
-                {/* Jump to Verse Button (only if more than 10 verses) */}
-                {selectedSurah.ayas > 10 && (
+                {/* Jump to Verse Button (only if more than threshold verses) */}
+                {selectedSurah.ayas > VERSE_NAVIGATION_THRESHOLD && (
                   <div className="px-6 pt-4 pb-2 flex justify-end">
                     <button
                       className="glass-morphism px-4 py-2 rounded-lg text-gold font-semibold hover:bg-gold/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gold"
@@ -354,39 +451,23 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
                   className="flex-grow overflow-y-auto relative"
                 >
                   <VerseListContainer
+                    ref={verseListRef}
                     selectedSurah={selectedSurah}
                     onScroll={handleVerseListScroll}
                     scrollToVerse={jumpTargetVerse}
                     onScrolledToVerse={() => setJumpTargetVerse(null)}
                   />
                 </div>
-                {/* Jump to Verse Modal */}
-                {isJumpModalOpen && (
-                  <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="bg-desert-night rounded-2xl shadow-2xl p-6 w-full max-w-md relative">
-                      <button
-                        className="absolute top-2 right-2 text-gray-400 hover:text-gold focus:outline-none"
-                        onClick={() => setIsJumpModalOpen(false)}
-                        aria-label="Close jump to verse modal"
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                      <h3 className="text-xl font-bold text-gold mb-4 text-center">Jump to Verse</h3>
-                      <div className="grid grid-cols-5 gap-2 max-h-80 overflow-y-auto">
-                        {Array.from({ length: selectedSurah.ayas }, (_, i) => (
-                          <button
-                            key={i + 1}
-                            className="bg-gold/10 hover:bg-gold/30 text-gold font-semibold rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-gold transition-all duration-150"
-                            onClick={() => handleJumpToVerse(i + 1)}
-                            aria-label={`Jump to verse ${i + 1}`}
-                          >
-                            {i + 1}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Improved Jump to Verse Modal */}
+                <JumpToVerseModal
+                  isOpen={isJumpModalOpen}
+                  onClose={() => setIsJumpModalOpen(false)}
+                  onVerseSelect={handleJumpToVerse}
+                  totalVerses={selectedSurah.ayas}
+                  currentVerse={jumpTargetVerse || undefined}
+                  surahName={selectedSurah.ename}
+                  isLoading={false}
+                />
               </div>
             )}
           </div>

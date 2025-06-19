@@ -1,9 +1,7 @@
 ---
-description: Comprehensive guidelines for maintaining and using the Web Design Bank for consistent UI/UX design across sessions
-author: https://github.com/turiddu25
-version: 1.0
-tags: ["web-design", "ui-ux", "documentation", "design-system", "accessibility"]
-globs: ["**/*.html", "**/*.css", "**/*.js", "designs/**/*"]
+description: 
+globs: 
+alwaysApply: true
 ---
 
 # 🎨 Cline's Web Design Bank

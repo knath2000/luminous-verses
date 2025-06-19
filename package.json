@@ -12,6 +12,8 @@
     "analyze:browser": "BUNDLE_ANALYZE=browser next build"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
+    "@heroicons/react": "^2.2.0",
     "@stackframe/stack": "^2.8.12",
     "@types/react-window": "^1.8.8",
     "lucide-react": "^0.515.0",

@@ -1,19 +1,43 @@
 ## Current Work Focus
-- Completed UI changes to move login button into settings modal
-- Updated SettingsModal component to include UserProfileButton
-- Removed standalone login button from layout
+- **NEW (2025-06-18)**: Upgrading verse-number grid – implemented tokenised `VersePill` component and replaced inline buttons in JumpToVerseModal & SearchableVerseGrid for consistent glassmorphic, gamified styling
+- Attempted implementation of pagination and navigation system for verse pages
+- Created BottomNavBar and PaginationBar components with glassmorphism styling
+- Enhanced useVirtualizedVerses hook with pagination functionality
+- Integration with VerseListContainer completed but not working as expected
 
 ## Recent Changes
-- Changed "Additional Settings" section to "User Settings" in SettingsModal
-- Replaced SettingsButton with UserProfileButton in modal
-- Verified all modal functionality works correctly
-- Confirmed project builds successfully after changes
+- **NEW**: Added verse-pill design tokens to `globals.css` and extended `tailwind.config.mjs` with custom keyframes and animations (`hoverLift`, `activeSquash`, `sparkleBurst`)
+- **NEW**: Created reusable `VersePill.tsx` component with accessibility attributes and motion tokens
+- **NEW**: Refactored `JumpToVerseModal.tsx` and `SearchableVerseGrid.tsx` to render `VersePill`, removing old inline class soup
+- Implemented BottomNavBar component with Home, Bookmarks, Settings navigation
+- Created PaginationBar with verse range display, navigation buttons, and progress indicators
+- Enhanced useVirtualizedVerses hook with currentVisibleRange tracking and pagination functions
+- Integrated pagination features into VerseListContainer with proper ref management
+- Installed @heroicons/react 2.2.0 dependency using pnpm
+- User removed pagination components from layout.tsx after they didn't work
+- **FIXED**: Replaced `any`-based `cx` helper in `VersePill.tsx` with strongly-typed `ClassValue` union to satisfy ESLint `no-explicit-any` rule and unblock production builds
+- **Build blocker resolved**: ESLint `no-explicit-any` violation fixed; CI/CD green
 
 ## Next Steps
-- Monitor user feedback on new login button placement
-- Consider additional UI refinements based on usage patterns
+- Validate visual/performance of VersePill in dev build; adjust virtualised grid sizing if needed
+- Add Storybook (or temp route) for interactive testing with reduced-motion knob
+- Write keyboard/ARIA snapshot & visual regression tests for VersePill states
+- **URGENT**: Debug pagination implementation – navigation buttons still not appearing in surah popup (build now passes ✅)
+- Investigate why components are not mounting/rendering in virtualized list context
+- Verify component visibility, conditional rendering logic, and state management
+- Consider alternative approaches for pagination in virtualized lists
+- Resume work tomorrow with fresh debugging perspective
+
+## Active Issues
+- **Pagination not working**: Despite complete implementation following established patterns, navigation buttons are not showing on verse page in surah popup
+- **VersePill sizing** (NEW): Pill height may require minor tuning for small screens; observe during QA
 
 ## Learnings
-- SettingsModal component successfully handles multiple modal states
-- UserProfileButton integrates well within the settings context
-- Build process remains stable after UI changes
+- **Design Tokens Success**: Centralising surface, shadow, and motion tokens in CSS vars greatly simplifies component styling and future theming
+- **Type Safety Win**: Eliminating explicit `any` tightened type checks without adding dependencies and demonstrated lightweight class-merge patterns
+- **Component Re-use**: Abstracting VersePill reduced duplicate code and ensures consistent micro-interactions across grids
+- Glassmorphism styling patterns are well-established and easy to follow
+- Component creation and TypeScript integration went smoothly
+- Pagination logic and hook enhancement completed without errors
+- Issue appears to be in component visibility/rendering rather than logic implementation
+- User decided to pause work and resume tomorrow for fresh debugging approach

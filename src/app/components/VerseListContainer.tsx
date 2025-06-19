@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, memo } from 'react';
+import React, { useCallback, useEffect, useRef, memo, forwardRef, useImperativeHandle } from 'react';
 import InfiniteLoader from 'react-window-infinite-loader';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List } from 'react-window';
@@ -14,33 +14,58 @@ import { useSurahNames } from '../hooks/useSurahNames';
 
 interface VerseListContainerProps {
   selectedSurah: SurahMetadata;
-  onScroll?: (scrollTop: number) => void;
+  onScroll?: (scrollTop: number, visibleIndex?: number) => void;
   scrollToVerse?: number | null; // 1-based verse number
   onScrolledToVerse?: () => void;
 }
 
+// Export the imperative handle interface
+export interface VerseListContainerHandle {
+  scrollToItem: (index: number, align?: 'start' | 'center' | 'end' | 'smart') => void;
+  scrollTo: (scrollOffset: number) => void;
+}
+
 const PAGE_SIZE = 50;
 
-const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onScroll, scrollToVerse, onScrolledToVerse }: VerseListContainerProps) {
+const VerseListContainer = memo(forwardRef<VerseListContainerHandle, VerseListContainerProps>(function VerseListContainer({ selectedSurah, onScroll, scrollToVerse, onScrolledToVerse }, ref) {
   const { settings } = useSettings();
   const listRef = useRef<List>(null);
   const { surahNames, fetchSurahName } = useSurahNames();
+
+  // Expose imperative methods via ref
+  useImperativeHandle(ref, () => ({
+    scrollToItem: (index: number, align: 'start' | 'center' | 'end' | 'smart' = 'start') => {
+      if (listRef.current) {
+        listRef.current.scrollToItem(index, align);
+      }
+    },
+    scrollTo: (scrollOffset: number) => {
+      if (listRef.current) {
+        listRef.current.scrollTo(scrollOffset);
+      }
+    },
+  }), []);
 
   const {
     verses,
     versesLoading,
     versesError,
     isItemLoaded,
-    loadMoreItems,
+    loadMoreItems: originalLoadMoreItems,
     itemCount
   } = useVirtualizedVerses({
     surahNumber: selectedSurah.number,
     totalVersesCount: selectedSurah.ayas,
   });
 
+  const loadMoreItems = useCallback(async (startIndex: number, stopIndex: number) => {
+    console.log(`%c[Debug] loadMoreItems: startIndex=${startIndex}, stopIndex=${stopIndex}`, 'color: #0f0;');
+    return originalLoadMoreItems(startIndex, stopIndex);
+  }, [originalLoadMoreItems]);
+
   const {
     itemSizes,
-    setItemSize,
+    setItemSize: originalSetItemSize,
     resetItemSizes,
     getEstimatedItemSize,
   } = useImprovedDynamicItemSize({
@@ -65,11 +90,23 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
     }, [verses, settings.showTransliteration, settings.showTranslation]),
   });
 
+  const setItemSize = useCallback((index: number, size: number) => {
+    if (itemSizes.get(index) !== size) {
+      console.log(`%c[Debug] setItemSize: index=${index}, new_size=${size}`, 'color: #f0f;');
+      originalSetItemSize(index, size);
+      if (listRef.current) {
+        console.log(`%c[Debug] resetAfterIndex: index=${index}`, 'color: #f0f;');
+        listRef.current.resetAfterIndex(index);
+      }
+    }
+  }, [itemSizes, originalSetItemSize, listRef]);
+
   // Memoize callback functions passed to virtualized list
   const getItemSize = useCallback((index: number) => {
     return itemSizes.get(index) || getEstimatedItemSize(index);
   }, [itemSizes, getEstimatedItemSize]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleItemsRendered = useCallback((props: {
     overscanStartIndex: number;
     overscanStopIndex: number;
@@ -79,11 +116,27 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
     loadMoreItems(props.visibleStartIndex, props.visibleStopIndex);
   }, [loadMoreItems]);
 
+  // Track visible index for scroll preservation using ref to avoid circular dependency
+  const visibleStartIndexRef = useRef(0);
+
   const handleScroll = useCallback(({ scrollOffset }: { scrollOffset: number }) => {
+    console.log(`%c[Debug] onScroll: offset=${scrollOffset}`, 'color: #ff0;');
     if (onScroll) {
-      onScroll(scrollOffset);
+      onScroll(scrollOffset, visibleStartIndexRef.current);
     }
   }, [onScroll]);
+
+  // Update visible index when items are rendered
+  const handleItemsRenderedWithIndex = useCallback((props: {
+    overscanStartIndex: number;
+    overscanStopIndex: number;
+    visibleStartIndex: number;
+    visibleStopIndex: number;
+  }) => {
+    console.log(`%c[Debug] onItemsRendered: visibleStartIndex=${props.visibleStartIndex}, visibleStopIndex=${props.visibleStopIndex}`, 'color: #0ff;');
+    visibleStartIndexRef.current = props.visibleStartIndex;
+    loadMoreItems(props.visibleStartIndex, props.visibleStopIndex);
+  }, [loadMoreItems]);
 
   // Fetch surah names for all loaded verses
   useEffect(() => {
@@ -165,7 +218,7 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
                     itemSize={getItemSize}
                     onItemsRendered={(props) => {
                       infiniteLoaderOnItemsRendered(props);
-                      handleItemsRendered(props);
+                      handleItemsRenderedWithIndex(props);
                     }}
                     onScroll={handleScroll}
                     overscanCount={5}
@@ -188,6 +241,6 @@ const VerseListContainer = memo(function VerseListContainer({ selectedSurah, onS
       )}
     </div>
   );
-});
+}));
 
 export default VerseListContainer;
