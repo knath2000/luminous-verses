@@ -533,3 +533,17 @@ Successes:
 Improvements_Identified_For_Consolidation:
 - Pattern: "Interactive child element should stop event propagation to avoid triggering parent actions."
 ---
+
+---
+Date: 2025-06-20
+TaskRef: "Surah List Scroll Persistence (saveSurahListPosition wiring)"
+
+Learnings:
+- Simply defining a state-persistence hook isn't enough—components must actually invoke the save function on scroll events.
+- Persisting list scroll positions dramatically improves UX when closing/reopening modals.
+- `onScroll` handler combined with debounced sessionStorage writes keeps performance acceptable.
+
+Successes:
+- One-line `onScroll={saveSurahListPosition}` integration enables automatic restoration with zero additional state.
+
+---

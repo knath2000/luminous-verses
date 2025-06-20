@@ -21,6 +21,7 @@
 - **Build blocker resolved**: ESLint `no-explicit-any` violation fixed; CI/CD green
 - **FIXED**: Empty popup on Surah modal open – `handleModalClose` now resets URL param and `lastActiveView` to `list`, preventing hydration mismatch and blank render
 - **FIXED**: "Show More / Show Less" buttons now stop event propagation so they no longer trigger verse-audio playback (`ExpandableText.tsx`)
+- **IMPROVED**: Surah popup now restores previous scroll position in list view by wiring `onScroll` to `saveSurahListPosition`.
 
 ## Next Steps
 - Validate visual/performance of VersePill in dev build; adjust virtualised grid sizing if needed

@@ -99,3 +99,10 @@
 **Rationale:** Prevents accidental triggering of higher-level behaviours (such as audio playback) when users interact with internal controls, ensuring predictable, accessible interactions.
 
 **Application:** `ExpandableText` toggle button now stops propagation, eliminating unwanted audio playback from verse cards in both the Surah modal and Verse-of-the-Day component.
+
+## Scroll State Persistence
+**Pattern:** Hook-based scroll preservation requires components to call the provided `save*Position` methods via `onScroll` (or equivalent) so that state actually updates in sessionStorage.
+
+**Rationale:** Prevents loss of position when modals/pages unmount, improving continuity. Debounced writes avoid performance hits.
+
+**Application:** `SurahListModal` now wires `onScroll={saveSurahListPosition}` enabling automatic restoration of list view on reopen.
