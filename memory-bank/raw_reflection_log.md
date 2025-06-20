@@ -514,3 +514,22 @@ Successes:
 Improvements_Identified_For_Consolidation:
 - Pattern: "Modal close must reset any URL query flags introduced while open and persist neutral UI state".
 ---
+
+---
+Date: 2025-06-20
+TaskRef: "Show More Button Propagation Fix (ExpandableText stopPropagation)"
+
+Learnings:
+- Click events inside nested interactive components can inadvertently bubble to parent containers with higher-level click handlers (e.g., audio playback triggers).
+- Adding `e.stopPropagation()` (and `e.preventDefault()` where necessary) inside the toggle button's `onClick` and keyboard handlers prevents undesired side-effects while preserving accessibility.
+
+Difficulties:
+- Issue reproduced only when verse cards were configured to autoplay on click; identifying bubbling required reviewing DOM tree and event flow.
+
+Successes:
+- Single-line fix in `ExpandableText.tsx` resolved the problem app-wide (VerseOfTheDay and Surah modal cards).
+- No regressions introduced; UI behaviour unchanged aside from eliminating accidental audio playback.
+
+Improvements_Identified_For_Consolidation:
+- Pattern: "Interactive child element should stop event propagation to avoid triggering parent actions."
+---

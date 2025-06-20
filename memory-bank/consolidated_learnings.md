@@ -92,3 +92,10 @@
 **Rationale:** Prevents stale query flags and persisted view state from reopening the modal in an invalid context, avoiding blank UI or hydration mismatches.
 
 **Application:** `handleModalClose` in `SurahListModal.tsx` now calls `updateUrlViewParam('list', true)` and `persistWithLastActiveView('list')` to guarantee a clean reopen experience.
+
+## Event Propagation Control in Nested Interactive Components
+**Pattern:** When a child element (e.g., Show More / Show Less button) sits inside a parent container that has its own click handler (e.g., starts verse audio), the child's event handler MUST call `event.stopPropagation()` (and `event.preventDefault()` where appropriate) for both `onClick` and keyboard activation handlers to prevent unintended parent-level actions.
+
+**Rationale:** Prevents accidental triggering of higher-level behaviours (such as audio playback) when users interact with internal controls, ensuring predictable, accessible interactions.
+
+**Application:** `ExpandableText` toggle button now stops propagation, eliminating unwanted audio playback from verse cards in both the Surah modal and Verse-of-the-Day component.

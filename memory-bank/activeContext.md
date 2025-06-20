@@ -20,6 +20,7 @@
 - **FIXED**: Browser Back now works inside SurahListModal – view state (`list` / `detail`) is synchronised to the URL query param `?view=` with shallow routing; back-button navigates correctly between views
 - **Build blocker resolved**: ESLint `no-explicit-any` violation fixed; CI/CD green
 - **FIXED**: Empty popup on Surah modal open – `handleModalClose` now resets URL param and `lastActiveView` to `list`, preventing hydration mismatch and blank render
+- **FIXED**: "Show More / Show Less" buttons now stop event propagation so they no longer trigger verse-audio playback (`ExpandableText.tsx`)
 
 ## Next Steps
 - Validate visual/performance of VersePill in dev build; adjust virtualised grid sizing if needed
@@ -48,3 +49,4 @@
 - **Robust Error Handling**: Treating 404 as valid empty data prevents UI crashes during translation searches for short surahs
 - **URL-driven State**: Encoding modal view in the URL and using `router.push({ shallow:true })` provides native browser history support without full page reloads
 - **Popstate Sync**: Listening for browser `popstate` and resetting `lv_lastActiveView` to `list` keeps `sessionStorage` aligned with the URL so restoration logic doesn't re-enter the verse detail view after a Back navigation
+- **Event Propagation Control**: Internal UI elements that should not trigger parent click handlers must call `e.stopPropagation()` (applied to ExpandableText toggle button)
