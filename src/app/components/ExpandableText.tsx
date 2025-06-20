@@ -83,9 +83,18 @@ const ExpandableText: React.FC<ExpandableTextProps> = ({
       </div>
       {showButton && (
         <button
-          onClick={handleToggle}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleToggle();
+          }}
           className="mt-2 text-gold hover:text-gold-bright flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-gold focus:ring-opacity-50 rounded-md"
           aria-expanded={expanded}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.stopPropagation();
+            }
+          }}
         >
           {expanded ? collapseLabel : expandLabel}
           {expanded ? (
