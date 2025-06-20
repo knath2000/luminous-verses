@@ -221,18 +221,16 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
     }
   };
 
-  // Enhanced modal close handler that saves scroll position
+  // Close the modal and reset navigation state so the next open always starts on the list view
   const handleModalClose = useCallback(() => {
-    // Capture the current view state before any cleanup
-    const activeView = currentView;
-    
-    console.log('🚪 Modal closing - current view:', activeView);
-    
-    // Immediately persist with the correct lastActiveView (bypasses React state timing issues)
-    persistWithLastActiveView(activeView);
-    
+    // 1️⃣ Replace the query param so ?view=detail is cleared without adding a history entry
+    updateUrlViewParam('list', true);
+
+    // 2️⃣ Persist that the last active view when closing was the list
+    persistWithLastActiveView('list');
+
     onClose();
-  }, [currentView, persistWithLastActiveView, onClose]);
+  }, [updateUrlViewParam, persistWithLastActiveView, onClose]);
 
   const handleSurahClick = (surah: SurahMetadata) => {
     setSelectedSurah(surah);

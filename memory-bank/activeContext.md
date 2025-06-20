@@ -19,6 +19,7 @@
 - **FIXED**: Added graceful 404 handling in `fetchVersesBatch` (quranApi.ts) so out-of-range requests return an empty payload instead of throwing, preventing Translation tab 404 errors
 - **FIXED**: Browser Back now works inside SurahListModal – view state (`list` / `detail`) is synchronised to the URL query param `?view=` with shallow routing; back-button navigates correctly between views
 - **Build blocker resolved**: ESLint `no-explicit-any` violation fixed; CI/CD green
+- **FIXED**: Empty popup on Surah modal open – `handleModalClose` now resets URL param and `lastActiveView` to `list`, preventing hydration mismatch and blank render
 
 ## Next Steps
 - Validate visual/performance of VersePill in dev build; adjust virtualised grid sizing if needed
@@ -29,6 +30,7 @@
 - Verify component visibility, conditional rendering logic, and state management
 - Consider alternative approaches for pagination in virtualized lists
 - Resume work tomorrow with fresh debugging perspective
+- Confirm Surah modal fix holds across reloads and browser sessions
 
 ## Active Issues
 - **Pagination not working**: Despite complete implementation following established patterns, navigation buttons are not showing on verse page in surah popup

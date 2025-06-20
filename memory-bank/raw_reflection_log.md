@@ -494,3 +494,23 @@ Improvements_Identified_For_Consolidation:
 - General pattern: Token-based component theming with CSS custom properties + Tailwind utilities.
 - Motion design: Pairing hover/active keyframes with `prefers-reduced-motion` fallbacks as standard accessibility approach.
 ---
+
+---
+Date: 2025-06-19
+TaskRef: "Surah Modal Blank Popup Fix (handleModalClose URL & state reset)"
+
+Learnings:
+- Identified that persisting `lastActiveView` as `detail` and leaving `?view=detail` in the URL caused the Surah popup to reopen in an empty detail state with a hydration mismatch.
+- Implemented a minimal fix: `handleModalClose` now performs `updateUrlViewParam('list', true)` and `persistWithLastActiveView('list')` before firing `onClose()`.
+- Understanding: Closing a modal should restore the surrounding page URL to its neutral state and persist UI state that reflects the closed context, not the internal view when it was closed.
+
+Difficulties:
+- Reproducing the issue required matching the exact sequence: open → detail → hard reload → open, making debugging non-obvious.
+
+Successes:
+- Surah modal now always opens on the list view with no blank popup or React hydration warnings.
+- Solution touched only one callback and introduced no new dependencies.
+
+Improvements_Identified_For_Consolidation:
+- Pattern: "Modal close must reset any URL query flags introduced while open and persist neutral UI state".
+---

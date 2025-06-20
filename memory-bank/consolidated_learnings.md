@@ -85,3 +85,10 @@
 - Keeps session-persisted restoration logic in lock-step with actual navigation, improving reliability of complex modals.
 
 **Application:** Implemented in `SurahListModal.tsx` – view state is encoded under `view` param and a `popstate` listener resets `lv_lastActiveView` to `list`, ensuring the Back button returns users from verse detail to the surah list instead of re-loading the detail view.
+
+## Modal Close URL & State Reset Pattern
+**Principle:** When a modal encodes its internal view in the URL (e.g., `?view=detail`), the modal's close handler must replace the URL back to its neutral state and persist `lastActiveView` as `list` (or equivalent) before unmounting.
+
+**Rationale:** Prevents stale query flags and persisted view state from reopening the modal in an invalid context, avoiding blank UI or hydration mismatches.
+
+**Application:** `handleModalClose` in `SurahListModal.tsx` now calls `updateUrlViewParam('list', true)` and `persistWithLastActiveView('list')` to guarantee a clean reopen experience.
