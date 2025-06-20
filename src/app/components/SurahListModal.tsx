@@ -143,6 +143,7 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
     scrollState,
     surahListScrollRef,
     verseListRef,
+    saveSurahListPosition,
     saveVerseListPosition,
     restoreSurahListPosition,
     restoreVerseListPosition,
@@ -402,6 +403,7 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
               <div 
                 ref={surahListScrollRef}
                 className="p-6 overflow-y-auto h-full"
+                onScroll={saveSurahListPosition}
               >
                 {/* Title for List View */}
                 <div className="text-center mb-8">
