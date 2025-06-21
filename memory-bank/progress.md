@@ -358,3 +358,5 @@ The translation search enhancement represents a major leap forward in making Qur
 
 *Last Updated: December 29, 2024*
 *Next Milestone: Phase 2 Advanced Features & History Integration*
+
+- [x] ✅ **COMPLETED**: URL param & shallow routing added to SurahListModal – browser Back now navigates list/detail correctly

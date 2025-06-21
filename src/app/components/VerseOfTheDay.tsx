@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ClickableVerseContainer } from './ClickableVerseContainer';
 import { getVerseOfTheDay, getSurahName } from '../utils/quranApi';
 import TransliterationDisplay from './TransliterationDisplay';
+import ExpandableText from './ExpandableText';
 
 interface Verse {
   surah: number;
@@ -123,13 +124,13 @@ export function VerseOfTheDay() {
         <div className="space-y-6">
           {/* Arabic Text */}
           <div className="text-center">
-            <div 
-              className="text-2xl md:text-4xl lg:text-5xl leading-relaxed font-arabic text-white"
-              style={{ fontFamily: 'var(--font-amiri)' }}
+            <ExpandableText
+              text={currentVerse.arabicText}
+              maxLines={3}
               dir="rtl"
-            >
-              {currentVerse.arabicText}
-            </div>
+              lang="ar"
+              className="text-2xl md:text-4xl lg:text-5xl leading-relaxed font-arabic text-white"
+            />
           </div>
 
           {/* Transliteration */}
@@ -138,14 +139,19 @@ export function VerseOfTheDay() {
               transliteration={currentVerse.transliteration}
               size="large"
               showLabel={true}
+              expandable={true}
             />
           </div>
 
           {/* Translation */}
           <div className="text-center border-t border-gray-600/50 pt-6">
-            <p className="text-gray-100 text-base md:text-lg leading-relaxed">
-              {currentVerse.translation}
-            </p>
+            <ExpandableText
+              text={currentVerse.translation}
+              maxLines={4}
+              dir="ltr"
+              lang="en"
+              className="text-gray-100 text-base md:text-lg leading-relaxed"
+            />
           </div>
         </div>
       </ClickableVerseContainer>

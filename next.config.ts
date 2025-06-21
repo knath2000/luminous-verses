@@ -10,9 +10,13 @@ const nextConfig: NextConfig = {
       '@stackframe/stack',
       'react-window',
       'react-virtualized-auto-sizer',
-      'react-window-infinite-loader'
+      'react-window-infinite-loader',
+      '@heroicons/react',
+      '@headlessui/react',
+      '@stackframe/stack-ui',
     ],
     reactCompiler: true,
+    // performanceBudget removed for now to avoid Next.js invalid option warning
   },
   async headers() {
     return [

@@ -10,11 +10,15 @@ const SurahListModal = dynamic(() =>
   ssr: false // Client-side only for modals
 });
 
+// Lazy load SettingsModal
+const SettingsModal = dynamic(() =>
+  import('./components/SettingsModal').then(mod => ({ default: mod.SettingsModal })), {
+  loading: () => <div className="animate-pulse bg-gray-700 rounded-lg h-64" />,
+  ssr: false,
+});
 
 import { VerseOfTheDay as AudioVerseOfTheDay } from './components/VerseOfTheDay';
 import SettingsButton from './components/SettingsButton';
-import { SettingsModal } from './components/SettingsModal';
-
 
 // Stars component for background
 const Stars = () => {
@@ -124,8 +128,8 @@ export default function Home() {
         <header className="pt-8 pb-4 px-4">
           
           <div
-            className={`text-center transition-all duration-1000 transform ${
-              titleVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'
+            className={`text-center transition-opacity duration-700 ${
+              titleVisible ? 'opacity-100' : 'opacity-0'
             }`}
           >
             {/* Main Title */}
@@ -155,7 +159,7 @@ export default function Home() {
             <AudioVerseOfTheDay />
             
             {/* Action Buttons */}
-            <div className="text-center mt-8 animate-fadeInUp">
+            <div className="text-center mt-8 animate-fadeIn">
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 {/* Settings Button */}
                 <SettingsButton onClick={handleOpenSettingsModal} />

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { StackProvider, StackTheme } from "@stackframe/stack";
-import { stackServerApp } from "../stack";
 import { Geist, Geist_Mono, Amiri } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "./components/ClientProviders";
 import { WebVitals } from "./components/WebVitals"; // Import WebVitals component
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackServerApp } from "../stack";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
