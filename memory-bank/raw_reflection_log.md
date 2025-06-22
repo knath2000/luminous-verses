@@ -547,3 +547,26 @@ Successes:
 - One-line `onScroll={saveSurahListPosition}` integration enables automatic restoration with zero additional state.
 
 ---
+
+---
+Date: 2025-06-23
+TaskRef: "Web MiniAudioBar parity with native app"
+
+Learnings:
+- Easily transfer UI patterns between React Native and web by reusing Context APIs (useAudioControls) and Tailwind classes.
+- Fixed positioning (`fixed bottom-6 left-1/2 -translate-x-1/2`) centers overlay consistently across breakpoints.
+- Backdrop-blur with semi-transparent black maintains glassmorphism while ensuring text readability.
+- SVG icon paths provide lightweight icon rendering without extra dependencies.
+
+Difficulties:
+- Needed to ensure component is rendered inside ClientProviders so it has access to audio context across app.
+- Avoid z-index clashes with existing modals; used high z index (50) to stay above content.
+
+Successes:
+- Feature matches native app visually and functionally (stop, skip, label updates).
+- No additional package dependencies; pure React + Tailwind + existing context.
+
+Improvements_Identified_For_Consolidation:
+- Pattern: Place global overlays inside root provider component for universal state access.
+- Pattern: Design once, implement cross-platform by abstracting shared logic into context/hooks.
+---

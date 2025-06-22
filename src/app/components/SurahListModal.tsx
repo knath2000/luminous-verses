@@ -456,15 +456,16 @@ export function SurahListModal({ isOpen, onClose }: SurahListModalProps) { // Ex
             {currentView === 'detail' && selectedSurah && (
               <div className="flex flex-col h-full">
                 {/* Fixed Header Section */}
-                <div 
-                  ref={headerRef} // Assign ref to header
-                  className="sticky top-0 left-0 w-full border-b border-white/10 z-20 bg-desert-night/90 backdrop-blur-sm"
+                <div
+                  ref={headerRef}
+                  className={`${isDescriptionExpanded ? '' : 'sticky top-0 left-0'} w-full border-b border-white/10 z-20 bg-desert-night/90 backdrop-blur-sm`}
                   style={{
                     opacity: headerOpacity,
                     maxHeight: `${headerOpacity === 0 ? 0 : HEADER_MAX_HEIGHT}px`,
                     transition: 'opacity 0.4s cubic-bezier(0.4,0,0.2,1), max-height 0.4s cubic-bezier(0.4,0,0.2,1)',
                     overflow: 'hidden',
                     pointerEvents: headerOpacity === 0 ? 'none' : undefined,
+                    marginBottom: isDescriptionExpanded ? 16 : 40,
                   }}
                 >
                   <div className="text-center mb-4">

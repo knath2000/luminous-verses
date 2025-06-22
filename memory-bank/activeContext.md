@@ -4,6 +4,7 @@
 - Created BottomNavBar and PaginationBar components with glassmorphism styling
 - Enhanced useVirtualizedVerses hook with pagination functionality
 - Integration with VerseListContainer completed but not working as expected
+- ✅ **Mini Audio Bar** – global overlay with stop & skip, matches native design.
 
 ## Recent Changes
 - **NEW**: Added verse-pill design tokens to `globals.css` and extended `tailwind.config.mjs` with custom keyframes and animations (`hoverLift`, `activeSquash`, `sparkleBurst`)

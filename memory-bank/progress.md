@@ -360,3 +360,11 @@ The translation search enhancement represents a major leap forward in making Qur
 *Next Milestone: Phase 2 Advanced Features & History Integration*
 
 - [x] ✅ **COMPLETED**: URL param & shallow routing added to SurahListModal – browser Back now navigates list/detail correctly
+
+## 2025-06-23
+- **Mini Audio Bar (Web)**
+  - Created `src/app/components/MiniAudioBar.tsx` replicating native overlay (glass backdrop, stop & skip buttons, verse label).
+  - Integrated globally via `ClientProviders` ensuring it renders across pages.
+  - Logic reuses `useAudioControls`: stop playback and skip to next verse.
+  - Responsive fixed position bottom-center; respects cosmic design (backdrop-blur, gold hover accents).
+  - Maintains cross-app parity with native iOS version.
