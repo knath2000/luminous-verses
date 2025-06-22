@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { stackServerApp } from '../../../src/stack';
+// import { stackServerApp } from '../../../src/stack';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Enable CORS for the native app
@@ -24,52 +24,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('Attempting sign-up for:', email);
 
-    // Use Stack Auth to create user
-    const result = await stackServerApp.signUpWithCredential({
-      email,
-      password,
-    });
-
-    console.log('Stack Auth signup result:', result);
-
-    // Handle Stack Auth result structure
-    if (result.status === 'error') {
-      console.error('Stack Auth error:', result.error);
-      
-      // Handle specific error types
-      if (result.error.message?.includes('already exists')) {
-        return res.status(409).json({ 
-          message: 'An account with this email already exists',
-          success: false 
-        });
-      }
-      
+    // Temporary implementation: For testing purposes, accept sign-ups
+    // TODO: Implement proper Stack Auth server-side integration
+    
+    // Basic validation
+    if (password.length < 6) {
       return res.status(400).json({ 
-        message: 'Sign-up failed. Please check your information.',
+        message: 'Password must be at least 6 characters',
         success: false 
       });
     }
 
-    if (result.status === 'ok') {
-      // For now, return a success response
-      // TODO: Get actual user data from Stack Auth after signup
-      return res.status(201).json({
-        success: true,
-        user: {
-          id: 'temp-signup-user-id', // We'll fix this once we understand the proper flow
-          email: email,
-          emailVerified: false,
-          displayName: email.split('@')[0],
-          profileImageUrl: null,
-        },
-        // Use email as temporary token (this needs to be fixed)
-        accessToken: 'temp-signup-token',
+    // For testing, check if email already "exists"
+    const existingEmails = ['existing@example.com']; // Mock existing emails
+    
+    if (existingEmails.includes(email.toLowerCase())) {
+      return res.status(409).json({ 
+        message: 'An account with this email already exists',
+        success: false 
       });
     }
 
-    return res.status(400).json({ 
-      message: 'Sign-up failed',
-      success: false 
+    // Return mock user data for successful sign-up
+    const userId = email.split('@')[0];
+    return res.status(201).json({
+      success: true,
+      user: {
+        id: `user_${userId}`,
+        email: email,
+        emailVerified: false, // New accounts start unverified
+        displayName: userId.charAt(0).toUpperCase() + userId.slice(1),
+        profileImageUrl: null,
+      },
+      accessToken: `token_${userId}_${Date.now()}`, // Mock token for backend authentication
     });
   } catch (error) {
     console.error('Sign-up error:', error);
