@@ -12,10 +12,12 @@
     "analyze:browser": "BUNDLE_ANALYZE=browser next build"
   },
   "dependencies": {
+    "@better-fetch/fetch": "^1.1.18",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@stackframe/stack": "^2.8.12",
     "@types/react-window": "^1.8.8",
+    "better-auth": "^1.2.10",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
