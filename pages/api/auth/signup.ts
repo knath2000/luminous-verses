@@ -1,6 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 // import { stackServerApp } from '../../../src/stack';
 
+// Mock user database for testing - in production this would be a real database
+// This should match the same users from signin.ts
+const EXISTING_USERS = {
+  'testuser@luminousverses.com': true,
+  'demo@example.com': true,
+  'user@test.com': true,
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Enable CORS for the native app
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,8 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('Attempting sign-up for:', email);
 
-    // Temporary implementation: For testing purposes, accept sign-ups
-    // TODO: Implement proper Stack Auth server-side integration
+    // Normalize email for lookup
+    const normalizedEmail = email.toLowerCase().trim();
     
     // Basic validation
     if (password.length < 6) {
@@ -35,28 +43,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // For testing, check if email already "exists"
-    const existingEmails = ['existing@example.com']; // Mock existing emails
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({ 
+        message: 'Please enter a valid email address',
+        success: false 
+      });
+    }
     
-    if (existingEmails.includes(email.toLowerCase())) {
+    // Check if email already exists
+    if (EXISTING_USERS[normalizedEmail as keyof typeof EXISTING_USERS]) {
       return res.status(409).json({ 
         message: 'An account with this email already exists',
         success: false 
       });
     }
 
-    // Return mock user data for successful sign-up
-    const userId = email.split('@')[0];
+    // In a real implementation, we would save the user to the database here
+    // For testing, we'll just return success for new email addresses
+    
+    // Generate user data for new account
+    const userId = normalizedEmail.split('@')[0];
     return res.status(201).json({
       success: true,
       user: {
         id: `user_${userId}`,
-        email: email,
+        email: normalizedEmail,
         emailVerified: false, // New accounts start unverified
         displayName: userId.charAt(0).toUpperCase() + userId.slice(1),
         profileImageUrl: null,
       },
       accessToken: `token_${userId}_${Date.now()}`, // Mock token for backend authentication
+      message: 'Account created successfully. Please check your email to verify your account.'
     });
   } catch (error) {
     console.error('Sign-up error:', error);
