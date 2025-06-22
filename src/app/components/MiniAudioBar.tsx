@@ -8,7 +8,7 @@ import { useAudioControls } from "../contexts/AudioContext";
  * Appears at the bottom-center whenever a verse is loaded in the AudioContext.
  */
 export default function MiniAudioBar() {
-  const { isPlaying, currentVerse, stop, play } = useAudioControls();
+  const { currentVerse, stop, play } = useAudioControls();
 
   const label = useMemo(() => {
     if (!currentVerse) return "";
