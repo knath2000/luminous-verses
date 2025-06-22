@@ -368,3 +368,117 @@ The translation search enhancement represents a major leap forward in making Qur
   - Logic reuses `useAudioControls`: stop playback and skip to next verse.
   - Responsive fixed position bottom-center; respects cosmic design (backdrop-blur, gold hover accents).
   - Maintains cross-app parity with native iOS version.
+
+## Recent Progress This Session: Better Auth Implementation for React Native
+
+### ✅ Completed This Session
+
+#### Better Auth Server Setup
+- **Better Auth Installation**: Installed `better-auth` and `@better-fetch/fetch` packages
+- **Server Configuration**: Created `/src/lib/auth.ts` with PostgreSQL integration
+- **API Handler**: Implemented `/src/app/api/auth/[...all]/route.ts` for Better Auth routes
+- **Client Setup**: Created `/src/lib/auth-client.ts` for React integration
+- **OAuth Configuration**: Set up Google and GitHub OAuth providers
+
+#### React Native Authentication Bridge
+- **Migration API**: Created `/src/app/api/migrate-stack-auth/route.ts` endpoint
+- **CORS Configuration**: Added proper CORS headers for cross-origin requests
+- **User Validation**: Implemented Stack Auth user validation logic
+- **Error Handling**: Added comprehensive error responses and logging
+
+#### Documentation & Setup
+- **Setup Guide**: Created `BETTER_AUTH_SETUP.md` with environment variables
+- **OAuth Instructions**: Documented Google and GitHub OAuth setup steps
+- **Database Migration**: Planned Better Auth database table creation
+
+### 🔧 Current Issues
+
+#### API Routing Problems
+- **404 Errors**: Migration endpoint returning 404 to React Native app
+- **Deployment Mismatch**: Local development works, production deployment has routing issues
+- **Catch-all Conflicts**: Better Auth `[...all]` route initially intercepted custom endpoints
+
+#### Authentication Flow Issues
+- **Stack Auth Migration**: Users can't successfully migrate from Stack Auth to Better Auth
+- **User Validation**: Stack Auth password validation needs refinement
+- **Session Management**: Better Auth session creation after migration incomplete
+
+### 🔄 In Progress
+
+#### API Deployment Debugging
+- **Route Verification**: Need to confirm Vercel deployment includes new API routes
+- **Logging Enhancement**: Adding more detailed API request/response logging
+- **CORS Testing**: Verifying cross-origin requests work in production
+
+#### Migration Flow Refinement
+- **Database Integration**: Connect to actual Neon database for user validation
+- **Password Hashing**: Implement proper password comparison with Stack Auth data
+- **User Registration**: Complete Better Auth user creation after Stack Auth validation
+
+### 📋 Next Steps Required
+
+#### Immediate Priorities
+1. **Debug 404 Issues**: Investigate why `/api/migrate-stack-auth` returns 404
+2. **Verify Deployment**: Check Vercel build logs for API route deployment
+3. **Test API Endpoints**: Use direct HTTP tools to test migration endpoint
+4. **Fix User Migration**: Complete Stack Auth to Better Auth user migration flow
+
+#### Technical Debt
+- **Environment Variables**: Set up all required Better Auth environment variables
+- **Database Schema**: Ensure Better Auth tables exist in Neon database
+- **Error Handling**: Improve React Native error handling for failed requests
+- **Testing**: Create comprehensive tests for authentication flow
+
+### 📝 Implementation Notes
+
+#### Better Auth Architecture
+```
+Web App (Next.js) → Better Auth Server → Neon PostgreSQL
+                 ↓
+React Native App → Migration API → Stack Auth Validation
+```
+
+#### Key Files Structure
+```
+/src/lib/auth.ts                    # Better Auth server config
+/src/lib/auth-client.ts             # Better Auth React client  
+/src/app/api/auth/[...all]/route.ts # Better Auth handler
+/src/app/api/migrate-stack-auth/route.ts # Migration endpoint
+BETTER_AUTH_SETUP.md                # Setup documentation
+```
+
+#### Environment Configuration
+- Better Auth requires secret key and URL configuration
+- OAuth providers need client ID and secret
+- Database URL must point to Neon PostgreSQL instance
+- CORS configuration needed for React Native requests
+
+### 🚨 Critical Blockers
+
+1. **API 404 Errors**: Migration endpoint not accessible from React Native
+2. **Deployment Verification**: Uncertain if new API routes deployed to Vercel
+3. **User Data Migration**: Stack Auth users cannot migrate to Better Auth system
+4. **Session Creation**: Better Auth session creation after migration fails
+
+### 📊 Success Metrics
+
+#### Authentication Goals
+- [ ] Stack Auth users can migrate to Better Auth
+- [ ] React Native app can authenticate via web app bridge
+- [ ] OAuth providers (Google, GitHub) work with Better Auth
+- [ ] Session management works across web and mobile platforms
+
+#### Technical Requirements
+- [ ] API endpoints return JSON (not HTML 404 pages)
+- [ ] CORS headers allow React Native requests
+- [ ] Error handling provides clear user feedback
+- [ ] Database stores Better Auth user data properly
+
+---
+
+## Previous Progress (Before This Session)
+
+### ✅ Recently Completed
+
+#### User Experience Enhancements
+- **NEW (2025-06-18)**: VersePill Component – Upgraded verse-number grid with tokenised glassmorphic styling

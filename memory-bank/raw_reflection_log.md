@@ -570,3 +570,36 @@ Improvements_Identified_For_Consolidation:
 - Pattern: Place global overlays inside root provider component for universal state access.
 - Pattern: Design once, implement cross-platform by abstracting shared logic into context/hooks.
 ---
+
+---
+Date: 2025-01-22
+TaskRef: "Better Auth Implementation for React Native Authentication Compatibility"
+
+Learnings:
+- Stack Auth SDK is incompatible with React Native due to Node.js built-in module dependencies (jose package using 'node:buffer')
+- Better Auth provides native React Native support and cross-platform authentication
+- Next.js App Router catch-all routes `[...all]` can intercept custom API endpoints if not carefully structured
+- Moving custom API endpoints outside auth directory avoids routing conflicts
+- Vercel deployment routing can differ from local development, causing 404 errors for API routes
+- CORS configuration is critical for React Native to web app API communication
+- Better Auth requires PostgreSQL database and specific environment variables for proper setup
+
+Difficulties:
+- Better Auth server API methods don't match NextAuth.js patterns, causing TypeScript errors
+- API routes returning HTML 404 pages instead of JSON when endpoints aren't properly deployed
+- Debugging deployment issues requires checking Vercel build logs and endpoint accessibility
+- Stack Auth to Better Auth migration requires careful user data validation and password handling
+
+Successes:
+- Successfully installed and configured Better Auth server with PostgreSQL integration
+- Created working API route structure that avoids Better Auth catch-all conflicts
+- Implemented CORS headers for cross-origin React Native requests
+- Documented comprehensive setup guide with environment variables and OAuth configuration
+
+Improvements_Identified_For_Consolidation:
+- API routing pattern: Always place custom endpoints outside catch-all route directories
+- Better Auth setup: Requires specific environment variables and database schema setup
+- React Native authentication: Use HTTP bridge pattern rather than direct SDK integration
+- Deployment verification: Always test API endpoints directly after Vercel deployment
+
+---

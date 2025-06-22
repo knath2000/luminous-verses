@@ -1,3 +1,61 @@
+# Active Context - Luminous Verses Web App
+
+## Current Focus: React Native Authentication Integration
+
+**Status:** Implementing Better Auth system with React Native bridge due to Stack Auth incompatibility
+
+### Recent Changes This Session
+1. **Better Auth Implementation** - Replaced Stack Auth with Better Auth for React Native compatibility
+2. **API Routing Issues** - Discovered Better Auth catch-all route `/api/auth/[...all]` conflicts with custom endpoints
+3. **Migration API** - Created `/api/migrate-stack-auth` endpoint to handle Stack Auth user migration
+4. **CORS Configuration** - Added proper CORS headers for React Native requests
+
+### Current Architecture
+- **Web App**: Next.js with Better Auth server integration
+- **Authentication**: Better Auth with PostgreSQL (Neon database)
+- **React Native Bridge**: Custom API endpoints at `/api/migrate-stack-auth`
+- **OAuth Providers**: Google and GitHub configured in Better Auth
+
+### Critical Issues Identified
+1. **Routing Conflicts**: Better Auth's `[...all]` route intercepted custom migration endpoints
+2. **API 404 Errors**: Migration endpoint returning 404 despite correct file structure
+3. **Deployment Mismatch**: Local vs. production routing differences on Vercel
+
+### Next Steps Required
+1. **Debug Deployment**: Verify API routes are properly deployed to Vercel
+2. **Test Migration Flow**: Ensure Stack Auth users can migrate to Better Auth
+3. **Error Handling**: Improve React Native error handling for failed requests
+4. **Documentation**: Update Better Auth setup guide with final configuration
+
+### Active Dependencies
+- `better-auth`: ^1.0.0 (server-side authentication)
+- `@better-fetch/fetch`: For HTTP requests
+- Better Auth Next.js integration
+- Neon PostgreSQL database for user storage
+
+### Environment Variables Needed
+```bash
+BETTER_AUTH_SECRET="random-secret-key"
+BETTER_AUTH_URL="https://luminous-verses.vercel.app" 
+DATABASE_URL="neon-postgres-connection-string"
+GOOGLE_CLIENT_ID="google-oauth-client-id"
+GOOGLE_CLIENT_SECRET="google-oauth-client-secret"
+GITHUB_CLIENT_ID="github-oauth-client-id"
+GITHUB_CLIENT_SECRET="github-oauth-client-secret"
+```
+
+### Files Modified This Session
+- `/src/lib/auth.ts` - Better Auth server configuration
+- `/src/app/api/auth/[...all]/route.ts` - Better Auth handler
+- `/src/lib/auth-client.ts` - Better Auth React client
+- `/src/app/api/migrate-stack-auth/route.ts` - Stack Auth migration endpoint
+- `BETTER_AUTH_SETUP.md` - Setup documentation
+
+### Current Blockers
+- Migration API endpoint returning 404 to React Native app
+- Need to verify Vercel deployment includes new API routes
+- Stack Auth user validation logic needs refinement
+
 ## Current Work Focus
 - **NEW (2025-06-18)**: Upgrading verse-number grid – implemented tokenised `VersePill` component and replaced inline buttons in JumpToVerseModal & SearchableVerseGrid for consistent glassmorphic, gamified styling
 - Attempted implementation of pagination and navigation system for verse pages
