@@ -36,8 +36,9 @@ export const auth = betterAuth({
   ],
   trustedOrigins: [
     process.env.NEXTAUTH_URL || "http://localhost:3000",
-    "exp://192.168.1.100:8081", // Your Expo development server
-    "luminous-verses://" // Your app scheme
+    "exp://192.168.1.134:8081",
+    "luminous-verses://",
+    "https://luminous-verses.vercel.app"
   ]
 })
 
