@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx @better-auth/cli migrate --y && next build",
     "start": "next start",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
@@ -12,13 +12,18 @@
     "analyze:browser": "BUNDLE_ANALYZE=browser next build"
   },
   "dependencies": {
+    "@better-auth/cli": "^1.2.10",
     "@better-fetch/fetch": "^1.1.18",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
+    "@prisma/adapter-neon": "^6.10.1",
+    "@prisma/client": "^6.10.1",
     "@stackframe/stack": "^2.8.12",
+    "@types/pg": "^8.15.4",
     "@types/react-window": "^1.8.8",
     "better-auth": "^1.2.10",
     "next": "15.3.3",
+    "pg": "^8.16.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-virtualized-auto-sizer": "^1.0.26",
@@ -38,6 +43,7 @@
     "cssnano": "^7.0.7",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
+    "prisma": "^6.10.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

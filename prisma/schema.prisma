@@ -1,0 +1,51 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BetterAuthUser {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  name          String?
+  passwordHash  String?
+  createdAt     DateTime @default(now())
+  accounts      BetterAuthAccount[]
+  sessions      BetterAuthSession[]
+  keys          BetterAuthKey[]
+}
+
+model BetterAuthAccount {
+  id                String   @id @default(cuid())
+  provider          String
+  providerAccountId String
+  type              String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         Int?
+  userId            String
+  user              BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model BetterAuthSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  expires      DateTime
+  userId       String
+  user         BetterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BetterAuthKey {
+  id        String   @id @default(cuid())
+  hashedKey String   @unique
+  expires   DateTime
+  userId    String?
+  user      BetterAuthUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+} 
